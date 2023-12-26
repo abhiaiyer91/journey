@@ -515,6 +515,7 @@ function AddWeight({ userConfig }) {
     await supabase.from("weight_tracker").upsert({
       created_at: start.toUTCString(),
       ...transaction?.data,
+      user_id: userConfig?.id,
       type: "IMPERIAL",
       value: values.value,
     });
@@ -558,7 +559,7 @@ function AddWeight({ userConfig }) {
   );
 }
 
-function AddWeightTarget({ userConfig }) {
+function AddWeightTarget({ userConfig, refetch }) {
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
@@ -583,6 +584,8 @@ function AddWeightTarget({ userConfig }) {
       user_id: userConfig?.id,
       total: values.value,
     });
+
+    return refetch();
   }
 
   return (
@@ -618,6 +621,7 @@ function AddWeightTarget({ userConfig }) {
 
 function ActivityActiveState({
   onFinish,
+  userConfig,
   hasCancel = false,
   disableCard = false,
   disableHeader = false,
@@ -634,6 +638,7 @@ function ActivityActiveState({
     const transaction = await supabase
       .from("transaction")
       .select()
+      .eq("user_id", userConfig?.id)
       .eq("created_at", start.toUTCString())
       .single();
 
@@ -649,6 +654,7 @@ function ActivityActiveState({
         .from("transaction")
         .upsert({
           created_at: start.toUTCString(),
+          user_id: userConfig?.id,
           ...transaction?.data,
           ...updateOb,
         })
@@ -745,7 +751,7 @@ function ActivityActiveState({
   );
 }
 
-function AddActivity() {
+function AddActivity({ userConfig }) {
   const [active, setActive] = useState(false);
   return (
     <section className="text-right">
@@ -756,6 +762,7 @@ function AddActivity() {
         <DrawerContent>
           <div className="pb-8 mx-auto max-w-96" style={{ width: `100%` }}>
             <ActivityActiveState
+              userConfig={userConfig}
               disableCard
               hasCancel
               onFinish={() => {
@@ -818,16 +825,14 @@ function AppView({
                     </TableCell>
                     {userConfig?.weight_loss_goal ? (
                       <TableCell className="font-medium">
-                        {userConfig?.weight_loss_goal?.total.toFixed(2)}
+                        {parseInt(userConfig?.weight_loss_goal?.total, 10)}
                       </TableCell>
                     ) : null}
                     {userConfig?.weight_loss_goal ? (
                       <TableCell className="font-medium">
                         {parseFloat(userConfig?.weight || "0") -
                           parseInt(
-                            (userConfig?.weight_loss_goal?.total || 0).toFixed(
-                              2
-                            ),
+                            userConfig?.weight_loss_goal?.total || 0,
                             10
                           )}
                       </TableCell>
@@ -857,23 +862,18 @@ function AppView({
                         {userConfig?.totalXP} /
                         {5000 *
                           (parseFloat(userConfig?.weight) -
-                            parseInt(
-                              userConfig?.weight_loss_goal?.total.toFixed(2),
-                              10
-                            ))}
+                            parseInt(userConfig?.weight_loss_goal?.total, 10))}
                       </TableCell>
                     ) : null}
 
-                    {userConfig?.weight_loss_goal ? (
+                    {userConfig?.weight_loss_goal && userConfig?.totalXP ? (
                       <TableCell className="font-medium">
                         {(
                           (userConfig?.totalXP /
                             (5000 *
                               (parseFloat(userConfig?.weight) -
                                 parseInt(
-                                  userConfig?.weight_loss_goal?.total.toFixed(
-                                    2
-                                  ),
+                                  userConfig?.weight_loss_goal?.total,
                                   10
                                 )))) *
                           100
@@ -891,7 +891,10 @@ function AppView({
                 <AccordionItem value="item-0">
                   <AccordionTrigger>Add a weight target</AccordionTrigger>
                   <AccordionContent>
-                    <AddWeightTarget userConfig={userConfig} />
+                    <AddWeightTarget
+                      userConfig={userConfig}
+                      refetch={refetch}
+                    />
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="item-1">
@@ -906,6 +909,7 @@ function AppView({
                     <p className="mb-4">Integrations coming soon.</p>
                     <ActivityActiveState
                       disableHeader
+                      userConfig={userConfig}
                       onFinish={() => {
                         // setActive(false);
                       }}
@@ -919,7 +923,7 @@ function AppView({
               <div className="mt-8 mb-8">
                 <h1 className="text-lg font-extrabold">Tracker</h1>
 
-                <AddActivity />
+                <AddActivity userConfig={userConfig} />
 
                 <Table>
                   <TableHeader>
@@ -944,15 +948,7 @@ function AppView({
                           <>
                             {" "}
                             <TableCell className="font-medium">
-                              {new Date(t.created_at)?.toLocaleDateString(
-                                "en-us",
-                                {
-                                  weekday: "long",
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                }
-                              )}
+                              {new Date(t.created_at).toISOString()}
                             </TableCell>
                             <TableCell>
                               {userConfig?.baseXP?.toFixed(2)}
@@ -1028,20 +1024,22 @@ async function getUserConfig({ router }) {
     .select()
     .eq("user_id", data?.id);
 
-  const totalCal = tx?.data?.map(({ activeXP, consumptionXP }) => {
+  const totalXP = tx?.data?.map(({ activeXP, consumptionXP }) => {
     return (
       parseInt(data?.baseXP, 10) +
-      parseInt(activeXP, 10) -
-      parseInt(consumptionXP, 10)
+      parseInt(activeXP || "0", 10) -
+      parseInt(consumptionXP || "0", 10)
     );
   });
 
+  console.log({ totalXP });
+
   return {
     ...data,
-    totalCal,
+    totalXP,
     userId,
     email: result?.data?.session?.user?.email,
-    tx,
+    tx: tx?.data,
     weight_loss_goal: weightLossGoal?.data,
   };
 }
@@ -1054,7 +1052,10 @@ export default function Home() {
   const router = useRouter();
 
   const refetch = () => {
-    setLoading(true);
+    if (!userConfig) {
+      setLoading(true);
+    }
+
     getUserConfig({ router }).then((data) => {
       setUserConfig(data);
 
@@ -1068,7 +1069,7 @@ export default function Home() {
 
   useEffect(() => {
     refetch();
-  }, [refetch]);
+  }, []);
 
   return (
     <>
