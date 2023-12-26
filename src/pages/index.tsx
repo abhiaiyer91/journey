@@ -543,14 +543,14 @@ function FoodSearch({ setFieldValue }) {
       .select()
       .then(({ data }) => {
         if (data) {
-          setFoodList(data);
+          setFoodList(data as any);
         }
       });
   }, []);
 
   const selectedFood = foodList?.find(
-    (framework) => framework.name?.toLowerCase() === value
-  );
+    (framework: any) => framework.name?.toLowerCase() === value
+  ) as any;
 
   useEffect(() => {
     setFieldValue({
@@ -571,8 +571,10 @@ function FoodSearch({ setFieldValue }) {
           className="w-[200px] justify-between"
         >
           {value
-            ? foodList.find(
-                (framework) => framework.name?.toLowerCase() === value
+            ? (
+                foodList.find(
+                  (framework: any) => framework.name?.toLowerCase() === value
+                ) as any
               )?.name
             : "Select from Food DB..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -1072,7 +1074,7 @@ function AppView({
 
                 <div>
                   <Progress
-                    value={(
+                    value={
                       (userConfig?.totalXP /
                         (5000 *
                           (parseFloat(userConfig?.weight) -
@@ -1081,7 +1083,7 @@ function AppView({
                               10
                             )))) *
                       100
-                    ).toFixed(2)}
+                    }
                   />
 
                   {userConfig?.weight_loss_goal ? (
@@ -1132,7 +1134,8 @@ function AppView({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  Protein: {parseFloat(userConfig?.todaysTx?.protein)?.toFixed(2)}g
+                  Protein:{" "}
+                  {parseFloat(userConfig?.todaysTx?.protein)?.toFixed(2)}g
                 </div>
                 <div className="text-2xl font-bold">
                   Carbs: {parseFloat(userConfig?.todaysTx?.carb)?.toFixed(2)}g
