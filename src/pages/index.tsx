@@ -409,26 +409,33 @@ function AddWeight({ userConfig, refetch }) {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="value"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input placeholder="Value in lbs" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <Card className="border-none">
+      <CardHeader>
+        <CardTitle>Track weight</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="value"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input placeholder="Value in lbs" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <div className="text-right mt-4">
-          <Button type="submit">Submit</Button>
-        </div>
-      </form>
-    </Form>
+            <div className="text-right mt-4">
+              <Button type="submit">Submit</Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -462,9 +469,9 @@ function AddWeightTarget({ userConfig, refetch }) {
   }
 
   return (
-    <Card>
+    <Card className="border-none">
       <CardHeader>
-        <CardTitle>Add Weight Target</CardTitle>
+        <CardTitle>Add weight target</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -704,7 +711,9 @@ function AppView({
           </Drawer>
           <Drawer>
             <DrawerTrigger>
-              <Button variant="outline" className="mr-2">Track weight</Button>
+              <Button variant="outline" className="mr-2">
+                Track weight
+              </Button>
             </DrawerTrigger>
             <DrawerContent>
               <AddWeight userConfig={userConfig} refetch={refetch} />
