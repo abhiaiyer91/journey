@@ -4,12 +4,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RocketIcon } from "@radix-ui/react-icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+import { Check, ChevronsUpDown } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Sheet,
   SheetContent,
@@ -499,6 +510,100 @@ function AddWeightTarget({ userConfig, refetch }) {
   );
 }
 
+const frameworks = [
+  {
+    value: "next.js",
+    label: "Next.js",
+  },
+  {
+    value: "sveltekit",
+    label: "SvelteKit",
+  },
+  {
+    value: "nuxt.js",
+    label: "Nuxt.js",
+  },
+  {
+    value: "remix",
+    label: "Remix",
+  },
+  {
+    value: "astro",
+    label: "Astro",
+  },
+];
+
+function FoodSearch({ setFieldValue }) {
+  const [open, setOpen] = React.useState(false);
+  const [value, setValue] = React.useState("");
+  const [foodList, setFoodList] = React.useState([]);
+
+  useEffect(() => {
+    supabase
+      .from("food_db")
+      .select()
+      .then(({ data }) => {
+        if (data) {
+          setFoodList(data);
+        }
+      });
+  }, []);
+
+  const selectedFood = foodList?.find(
+    (framework) => framework.name?.toLowerCase() === value
+  );
+
+  useEffect(() => {
+    setFieldValue(selectedFood?.calories);
+  }, [selectedFood?.calories]);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-[200px] justify-between"
+        >
+          {value
+            ? foodList.find(
+                (framework) => framework.name?.toLowerCase() === value
+              )?.name
+            : "Select from Food DB..."}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-0">
+        <Command>
+          <CommandInput placeholder="Search food DB..." />
+          <CommandEmpty>No Food found.</CommandEmpty>
+          <CommandGroup>
+            {foodList?.map((framework: any) => (
+              <CommandItem
+                key={framework.name}
+                value={framework.name?.toLowerCase()}
+                onSelect={(currentValue) => {
+                  setValue(currentValue === value ? "" : currentValue);
+                  setOpen(false);
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    value === framework.name ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                {framework.name}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function ActivityActiveState({
   onFinish,
   userConfig,
@@ -507,14 +612,19 @@ function ActivityActiveState({
   disableHeader = false,
   refetch,
 }) {
+  const [formType, setFormType] = useState("ACTIVE_CAL");
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
-    defaultValues: {},
+    defaultValues: {
+      type: "ACTIVE_CAL",
+    },
   });
 
   async function onSubmit(values: z.infer<typeof transactionSchema>) {
     var start = new Date();
     start.setUTCHours(0, 0, 0, 0);
+
+    console.log({ values }, "###");
 
     const transaction = await supabase
       .from("transaction")
@@ -577,11 +687,20 @@ function ActivityActiveState({
                   defaultValue={field.value}
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="ACTIVE_CAL" id="ACTIVE_CAL" />
+                    <RadioGroupItem
+                      onClick={() => {
+                        setFormType("ACTIVE_CAL");
+                      }}
+                      value="ACTIVE_CAL"
+                      id="ACTIVE_CAL"
+                    />
                     <Label htmlFor="ACTIVE_CAL">Active</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem
+                      onClick={() => {
+                        setFormType("CONSUMPTION_CAL");
+                      }}
                       value="CONSUMPTION_CAL"
                       id="CONSUMPTION_CAL"
                     />
@@ -593,6 +712,15 @@ function ActivityActiveState({
             </FormItem>
           )}
         />
+
+        {formType === `CONSUMPTION_CAL` ? (
+          <FoodSearch
+            setFieldValue={(val) => {
+              form.setValue("value", `${val}`);
+            }}
+          />
+        ) : null}
+
         <FormField
           control={form.control}
           name="value"
@@ -609,9 +737,12 @@ function ActivityActiveState({
         <div className="text-right mt-4">
           {hasCancel && (
             <DrawerClose>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline" className="mr-2">
+                Cancel
+              </Button>
             </DrawerClose>
           )}
+
           <Button type="submit">Submit</Button>
         </div>
       </form>
