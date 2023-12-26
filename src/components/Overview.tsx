@@ -1,60 +1,70 @@
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { supabase } from "@/lib/supabase";
+import { useEffect, useState } from "react";
+import {
+  Bar,
+  Line,
+  LineChart,
+  BarChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
 
-const data = [
-  {
-    name: "Jan",
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: "Feb",
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: "Mar",
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: "Apr",
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: "May",
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: "Jun",
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: "Jul",
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: "Aug",
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: "Sep",
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: "Oct",
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: "Nov",
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-  {
-    name: "Dec",
-    total: Math.floor(Math.random() * 5000) + 1000,
-  },
-];
+export function Overview({ tx, type, chartType }) {
+  let chartData = [];
 
-export function Overview() {
+  if (type === "CONSUMPTION") {
+    chartData =
+      tx?.map(({ created_at, consumptionXP }) => {
+        return {
+          total: parseInt(consumptionXP, 10),
+          name: new Date(created_at).toISOString(),
+        };
+      }) || [];
+  } else if (type === "ACTIVE") {
+    chartData = tx?.map(({ created_at, activeXP }) => {
+      return {
+        name: created_at,
+        total: activeXP,
+      };
+    });
+  }
+
+  const [serieData, setSerieData] = useState(chartData);
+
+  let ChartComp = LineChart;
+
+  if (chartType === `BAR`) {
+    ChartComp = BarChart;
+  }
+
+  useEffect(() => {
+    if (type === "WEIGHT") {
+      supabase
+        .from("weight_tracker")
+        .select()
+        .then(({ data }) => {
+          const sd =
+            data?.map(({ created_at, value }) => {
+              return {
+                total: parseInt(value, 10),
+                name: new Date(created_at).toISOString(),
+              };
+            }) || [];
+
+          if (sd?.length) {
+            console.log({ sd });
+            setSerieData(sd as any);
+          }
+        });
+    }
+  }, [type, chartType]);
+
+  console.log(serieData);
+
   return (
-    <ResponsiveContainer width="100%" height={350}>
-      <BarChart data={data}>
+    <ResponsiveContainer width="100%" height={350} className="mt-4">
+      <ChartComp data={serieData}>
         <XAxis
           dataKey="name"
           stroke="#888888"
@@ -67,15 +77,14 @@ export function Overview() {
           fontSize={12}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(value) => `$${value}`}
         />
-        <Bar
-          dataKey="total"
-          fill="currentColor"
-          radius={[4, 4, 0, 0]}
-          className="fill-primary"
-        />
-      </BarChart>
+        {chartType === `BAR` ? (
+          <Bar dataKey="total" fill="currentColor" className="fill-primary" />
+        ) : null}
+        {chartType === `LINE` ? (
+          <Line dataKey="total" fill="currentColor" className="fill-primary" />
+        ) : null}
+      </ChartComp>
     </ResponsiveContainer>
   );
 }

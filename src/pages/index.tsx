@@ -1,9 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
-import { MinusIcon, PlusIcon } from "@radix-ui/react-icons";
-import { Bar, BarChart, ResponsiveContainer } from "recharts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Accordion,
@@ -73,6 +70,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/router";
 import { UserNav } from "@/components/layout";
 import { AddHydration } from "@/components/Hydration";
+import { Overview } from "@/components/Overview";
 
 function startOfDay() {
   var start = new Date();
@@ -106,132 +104,6 @@ const activityMultiplier = {
   HEAVY: 1.725,
   ATHLETE: 1.9,
 };
-
-type Series = {
-  label: string;
-  data: any[];
-};
-
-function WeightChart({ tx }) {
-  const [serieData, setSerieData] = useState([] as any);
-
-  useEffect(() => {
-    supabase
-      .from("weight_tracker")
-      .select()
-      .then(({ data }) => {
-        const sD = [
-          {
-            label: "Weight",
-            data:
-              data?.map(({ created_at, value }) => {
-                return {
-                  value: parseInt(value, 10),
-                  date: new Date(created_at).toDateString(),
-                };
-              }) || [],
-          },
-        ];
-
-        setSerieData(sD);
-      });
-  }, []);
-
-  const primaryAxis = React.useMemo(
-    () => ({
-      getValue: (datum: any) => datum.date,
-    }),
-    []
-  );
-
-  const secondaryAxes = React.useMemo(
-    () => [
-      {
-        getValue: (datum: any) => parseInt(datum.value, 10),
-        elementType: `line` as any,
-      },
-    ],
-    []
-  );
-
-  if (!serieData?.length || !tx?.length) {
-    return null;
-  }
-
-  return (
-    <section className="mb-10">
-      <h1 className="text-lg font-extrabold">Viz</h1>
-
-      <Tabs defaultValue="WEIGHT">
-        <TabsList>
-          <TabsTrigger value="WEIGHT">Weight</TabsTrigger>
-          <TabsTrigger value="CONSUMPTION">Consumption</TabsTrigger>
-          <TabsTrigger value="ACTIVE">Active</TabsTrigger>
-        </TabsList>
-        <TabsContent value="WEIGHT">
-          <div style={{ height: `200px` }}>
-            <Chart
-              id="CHART"
-              options={{
-                data: serieData,
-                primaryAxis,
-                secondaryAxes,
-              }}
-            />
-          </div>
-        </TabsContent>
-        <TabsContent value="CONSUMPTION">
-          {" "}
-          <div style={{ height: `200px` }}>
-            <Chart
-              id="CHART"
-              options={{
-                data: [
-                  {
-                    label: "Consumption",
-                    data:
-                      tx?.map(({ created_at, consumptionXP }) => {
-                        return {
-                          value: parseInt(consumptionXP, 10),
-                          date: new Date(created_at).toDateString(),
-                        };
-                      }) || [],
-                  },
-                ],
-                primaryAxis,
-                secondaryAxes,
-              }}
-            />
-          </div>
-        </TabsContent>
-        <TabsContent value="ACTIVE">
-          {" "}
-          <div style={{ height: `200px` }}>
-            <Chart
-              id="CHART"
-              options={{
-                data: [
-                  {
-                    label: "Active",
-                    data:
-                      tx?.map(({ created_at, activeXP }) => {
-                        return {
-                          value: parseInt(activeXP, 10),
-                          date: new Date(created_at).toDateString(),
-                        };
-                      }) || [],
-                  },
-                ],
-                primaryAxis,
-                secondaryAxes,
-              }}
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
-    </section>
-  );
-}
 
 // Create a single supabase client for interacting with your database
 
@@ -844,6 +716,94 @@ function AppView({
                 </p>
               </CardContent>
             </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Hydration</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {userConfig?.hydration?.value}oz
+                </div>
+                <AddHydration userConfig={userConfig} refetch={refetch} />
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4">
+              <CardHeader>
+                <CardTitle>Activity</CardTitle>
+              </CardHeader>
+              <CardContent className="pl-2">
+                <Tabs defaultValue="ACTIVE">
+                  <TabsList>
+                    <TabsTrigger value="ACTIVE">Active</TabsTrigger>
+                    <TabsTrigger value="WEIGHT">Weight</TabsTrigger>
+                    <TabsTrigger value="CONSUMPTION">Consumption</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="ACTIVE">
+                    <Overview tx={tx} type="ACTIVE" chartType="BAR" />
+                  </TabsContent>
+                  <TabsContent value="WEIGHT">
+                    <Overview tx={tx} type="WEIGHT" chartType="LINE" />
+                  </TabsContent>
+                  <TabsContent value="CONSUMPTION">
+                    <Overview tx={tx} type="CONSUMPTION" chartType="BAR" />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Data</CardTitle>
+
+                <AddActivity userConfig={userConfig} refetch={refetch} />
+              </CardHeader>
+              <CardContent className="pl-2">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[120px]">Date</TableHead>
+                      <TableHead>Base XP</TableHead>
+                      <TableHead>Active</TableHead>
+                      <TableHead>Consumed</TableHead>
+                      <TableHead>Total XP</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      {tx?.map((t) => {
+                        console.log(
+                          t,
+                          parseFloat(userConfig?.baseXP?.toFixed(2)) +
+                            parseInt(t?.activeXP || "0", 10)
+                          // parseInt(t?.consumptionXP || "0", 10)
+                        );
+                        return (
+                          <>
+                            {" "}
+                            <TableCell className="font-medium">
+                              {new Date(t.created_at).toISOString()}
+                            </TableCell>
+                            <TableCell>
+                              {userConfig?.baseXP?.toFixed(2)}
+                            </TableCell>
+                            <TableCell>{t?.activeXP}</TableCell>
+                            <TableCell>{t?.consumptionXP}</TableCell>
+                            <TableCell>
+                              {parseFloat(userConfig?.baseXP?.toFixed(2)) +
+                                parseInt(t?.activeXP || "0", 10) -
+                                parseInt(t?.consumptionXP || "0", 10)}
+                            </TableCell>
+                          </>
+                        );
+                      })}
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </div>
         </div>
         <Card>
@@ -932,62 +892,6 @@ function AppView({
                 </AccordionItem>
               </Accordion>
             </div>
-
-            <div>
-              <h1 className="text-lg font-extrabold mb-2">Hydration (oz)</h1>
-              <AddHydration refetch={refetch} userConfig={userConfig} />
-            </div>
-
-            {tx?.length > 0 ? (
-              <div className="mt-8 mb-8">
-                <h1 className="text-lg font-extrabold">Tracker</h1>
-
-                <AddActivity userConfig={userConfig} refetch={refetch} />
-
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[120px]">Date</TableHead>
-                      <TableHead>Base XP</TableHead>
-                      <TableHead>Active</TableHead>
-                      <TableHead>Consumed</TableHead>
-                      <TableHead>Total XP</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      {tx?.map((t) => {
-                        console.log(
-                          t,
-                          parseFloat(userConfig?.baseXP?.toFixed(2)) +
-                            parseInt(t?.activeXP || "0", 10)
-                          // parseInt(t?.consumptionXP || "0", 10)
-                        );
-                        return (
-                          <>
-                            {" "}
-                            <TableCell className="font-medium">
-                              {new Date(t.created_at).toISOString()}
-                            </TableCell>
-                            <TableCell>
-                              {userConfig?.baseXP?.toFixed(2)}
-                            </TableCell>
-                            <TableCell>{t?.activeXP}</TableCell>
-                            <TableCell>{t?.consumptionXP}</TableCell>
-                            <TableCell>
-                              {parseFloat(userConfig?.baseXP?.toFixed(2)) +
-                                parseInt(t?.activeXP || "0", 10) -
-                                parseInt(t?.consumptionXP || "0", 10)}
-                            </TableCell>
-                          </>
-                        );
-                      })}
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            ) : null}
-            <WeightChart tx={tx} />
           </CardContent>
         </Card>
       </>
