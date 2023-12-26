@@ -656,6 +656,150 @@ function AddActivity({ userConfig, refetch }) {
   );
 }
 
+const foodSchema = z.object({
+  calories: z.string(),
+  carb: z.string(),
+  protein: z.string(),
+  fat: z.string(),
+  name: z.string(),
+  barcode: z.string(),
+  identifier: z.string(),
+  serving_size: z.string(),
+});
+
+function FoodForm() {
+  const form = useForm<z.infer<typeof foodSchema>>({
+    resolver: zodResolver(foodSchema),
+  });
+
+  async function onSubmit(values: z.infer<typeof foodSchema>) {
+    const result = await supabase.from("food_db").insert(values);
+
+    console.log(result, "###");
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="serving_size"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Serving size</FormLabel>
+              <FormControl>
+                <Input placeholder="" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="identifier"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Identifier</FormLabel>
+              <FormControl>
+                <Input placeholder="" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="calories"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Calories per serving</FormLabel>
+              <FormControl>
+                <Input placeholder="" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="barcode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Barcode</FormLabel>
+              <FormControl>
+                <Input placeholder="" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="carb"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Carbohydrates</FormLabel>
+              <FormControl>
+                <Input placeholder="" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="protein"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Protein</FormLabel>
+              <FormControl>
+                <Input placeholder="" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="fat"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fat</FormLabel>
+              <FormControl>
+                <Input placeholder="" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <DrawerClose>
+          <div className="text-right mt-4">
+            <Button type="submit">Submit</Button>
+          </div>
+        </DrawerClose>
+      </form>
+    </Form>
+  );
+}
+
 function AppView({
   tx,
   userConfig,
@@ -721,12 +865,22 @@ function AppView({
           </Drawer>
           <Drawer>
             <DrawerTrigger>
-              <Button variant="outline">Edit target</Button>
+              <Button variant="outline" className="mr-2">
+                Edit target
+              </Button>
             </DrawerTrigger>
             <DrawerContent>
               <AddWeightTarget userConfig={userConfig} refetch={refetch} />
             </DrawerContent>
           </Drawer>
+          <Sheet>
+            <SheetTrigger>
+              <Button variant="outline">Contribute Food Data</Button>
+            </SheetTrigger>
+            <SheetContent>
+              <FoodForm />
+            </SheetContent>
+          </Sheet>
         </section>
 
         <div className="space-y-4">
@@ -759,17 +913,7 @@ function AppView({
                 </p>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Hydration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {userConfig?.hydration?.value}oz
-                </div>
-                <AddHydration userConfig={userConfig} refetch={refetch} />
-              </CardContent>
-            </Card>
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Spec</CardTitle>
@@ -815,6 +959,17 @@ function AppView({
                 </div>
               </CardContent>
             </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Hydration</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {userConfig?.hydration?.value}oz
+                </div>
+                <AddHydration userConfig={userConfig} refetch={refetch} />
+              </CardContent>
+            </Card>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -853,7 +1008,7 @@ function AppView({
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[120px]">Date</TableHead>
-                      <TableHead>Base XP</TableHead>
+                      <TableHead>Spec</TableHead>
                       <TableHead>Active</TableHead>
                       <TableHead>Consumed</TableHead>
                       <TableHead>Total XP</TableHead>
@@ -862,12 +1017,6 @@ function AppView({
                   <TableBody>
                     <TableRow>
                       {tx?.map((t) => {
-                        console.log(
-                          t,
-                          parseFloat(userConfig?.baseXP?.toFixed(2)) +
-                            parseInt(t?.activeXP || "0", 10)
-                          // parseInt(t?.consumptionXP || "0", 10)
-                        );
                         return (
                           <>
                             {" "}
