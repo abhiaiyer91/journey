@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
-import { AxisOptions } from "react-charts";
-import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@supabase/supabase-js";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -10,6 +9,24 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+  DrawerFooter,
+} from "@/components/ui/drawer";
 import {
   Select,
   SelectContent,
@@ -84,7 +101,7 @@ type Series = {
   data: any[];
 };
 
-function WeightChart() {
+function WeightChart({ tx }) {
   const [serieData, setSerieData] = useState([] as any);
 
   useEffect(() => {
@@ -126,21 +143,81 @@ function WeightChart() {
     []
   );
 
-  if (!serieData?.length) {
+  if (!serieData?.length || !tx?.length) {
     return null;
   }
 
   return (
-    <section style={{ height: `200px` }} className="mb-10">
+    <section className="mb-10">
       <h1 className="text-lg font-extrabold">Viz</h1>
-      <Chart
-        id="CHART"
-        options={{
-          data: serieData,
-          primaryAxis,
-          secondaryAxes,
-        }}
-      />
+
+      <Tabs defaultValue="WEIGHT">
+        <TabsList>
+          <TabsTrigger value="WEIGHT">Weight</TabsTrigger>
+          <TabsTrigger value="CONSUMPTION">Consumption</TabsTrigger>
+          <TabsTrigger value="ACTIVE">Active</TabsTrigger>
+        </TabsList>
+        <TabsContent value="WEIGHT">
+          <div style={{ height: `200px` }}>
+            <Chart
+              id="CHART"
+              options={{
+                data: serieData,
+                primaryAxis,
+                secondaryAxes,
+              }}
+            />
+          </div>
+        </TabsContent>
+        <TabsContent value="CONSUMPTION">
+          {" "}
+          <div style={{ height: `200px` }}>
+            <Chart
+              id="CHART"
+              options={{
+                data: [
+                  {
+                    label: "Consumption",
+                    data:
+                      tx?.map(({ created_at, consumptionXP }) => {
+                        return {
+                          value: parseInt(consumptionXP, 10),
+                          date: new Date(created_at).toDateString(),
+                        };
+                      }) || [],
+                  },
+                ],
+                primaryAxis,
+                secondaryAxes,
+              }}
+            />
+          </div>
+        </TabsContent>
+        <TabsContent value="ACTIVE">
+          {" "}
+          <div style={{ height: `200px` }}>
+            <Chart
+              id="CHART"
+              options={{
+                data: [
+                  {
+                    label: "Active",
+                    data:
+                      tx?.map(({ created_at, activeXP }) => {
+                        return {
+                          value: parseInt(activeXP, 10),
+                          date: new Date(created_at).toDateString(),
+                        };
+                      }) || [],
+                  },
+                ],
+                primaryAxis,
+                secondaryAxes,
+              }}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
     </section>
   );
 }
@@ -315,28 +392,21 @@ function BasicInfo({ form }) {
   );
 }
 
-function TDEECalculator({ form, tde, setTD }) {
+function TDEECalculator({ form, setTD }) {
   return (
     <section>
-      <div>
-        <Tabs
-          onSelect={(event) => {
-            form.setValue("type", event === 0 ? "IMPERIAL" : "METRIC");
-          }}
-        >
-          <TabList>
-            <Tab>Imperial</Tab>
-            <Tab>Metric</Tab>
-          </TabList>
-
-          <TabPanel>
-            <TDEEForm form={form} setTD={setTD} metric_type="IMPERIAL" />
-          </TabPanel>
-          <TabPanel>
-            <TDEEForm form={form} setTD={setTD} metric_type="METRIC" />
-          </TabPanel>
-        </Tabs>
-      </div>
+      <Tabs defaultValue="IMPERIAL" className="w-[400px]">
+        <TabsList>
+          <TabsTrigger value="IMPERIAL">Imperial</TabsTrigger>
+          <TabsTrigger value="METRIC">Metric</TabsTrigger>
+        </TabsList>
+        <TabsContent value="IMPERIAL">
+          <TDEEForm form={form} setTD={setTD} metric_type="IMPERIAL" />
+        </TabsContent>
+        <TabsContent value="METRIC">
+          <TDEEForm form={form} setTD={setTD} metric_type="METRIC" />
+        </TabsContent>
+      </Tabs>
     </section>
   );
 }
@@ -403,7 +473,7 @@ function Fitness({ userConfig }) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <BasicInfo form={form} />
-        <TDEECalculator tde={tde} setTD={setTD} form={form} />
+        <TDEECalculator setTD={setTD} form={form} />
 
         <Button type="submit">Submit</Button>
       </form>
@@ -540,7 +610,12 @@ function AddWeightTarget() {
   );
 }
 
-function ActivityActiveState({ onFinish, disableHeader = false }) {
+function ActivityActiveState({
+  onFinish,
+  hasCancel = false,
+  disableCard = false,
+  disableHeader = false,
+}) {
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {},
@@ -592,62 +667,75 @@ function ActivityActiveState({ onFinish, disableHeader = false }) {
 
     onFinish();
   }
+
+  const formComp = (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Type</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="ACTIVE_CAL" id="ACTIVE_CAL" />
+                    <Label htmlFor="ACTIVE_CAL">Active</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem
+                      value="CONSUMPTION_CAL"
+                      id="CONSUMPTION_CAL"
+                    />
+                    <Label htmlFor="CONSUMPTION_CAL">Consumption</Label>
+                  </div>
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="value"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Input placeholder="Value in calories" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="text-right">
+          {hasCancel && (
+            <DrawerClose>
+              <Button variant="outline">Cancel</Button>
+            </DrawerClose>
+          )}
+
+          <Button type="submit">Submit</Button>
+        </div>
+      </form>
+    </Form>
+  );
+
+  if (disableCard) {
+    return <>{formComp}</>;
+  }
+
   return (
     <Card>
       <CardHeader>
         {!disableHeader && <CardTitle>Add Activity</CardTitle>}
       </CardHeader>
 
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="ACTIVE_CAL" id="ACTIVE_CAL" />
-                        <Label htmlFor="ACTIVE_CAL">Active</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem
-                          value="CONSUMPTION_CAL"
-                          id="CONSUMPTION_CAL"
-                        />
-                        <Label htmlFor="CONSUMPTION_CAL">Consumption</Label>
-                      </div>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="value"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input placeholder="Value in calories" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="text-right">
-              <Button type="submit">Submit</Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
+      <CardContent>{formComp}</CardContent>
     </Card>
   );
 }
@@ -655,25 +743,24 @@ function ActivityActiveState({ onFinish, disableHeader = false }) {
 function AddActivity() {
   const [active, setActive] = useState(false);
   return (
-    <>
-      <CardDescription className="text-right">
-        {" "}
-        <button
-          onClick={() => {
-            setActive(!active);
-          }}
-        >
-          Add Activity
-        </button>
-      </CardDescription>
-      {active ? (
-        <ActivityActiveState
-          onFinish={() => {
-            setActive(false);
-          }}
-        />
-      ) : null}
-    </>
+    <section className="text-right">
+      <Drawer>
+        <DrawerTrigger>
+          <CardDescription>Add Activity</CardDescription>
+        </DrawerTrigger>
+        <DrawerContent>
+          <div className="pb-8 mx-auto max-w-96" style={{ width: `100%` }}>
+            <ActivityActiveState
+              disableCard
+              hasCancel
+              onFinish={() => {
+                setActive(false);
+              }}
+            />
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </section>
   );
 }
 
@@ -694,18 +781,15 @@ function AppView({
           <CardHeader>
             <CardTitle>Welcome back {userConfig?.name}!</CardTitle>
             <CardDescription>
-              {" "}
-              <button
-                onClick={() => {
-                  setToggleEdit(!toggleEdit);
-                }}
-              >
-                Edit profile
-              </button>
+              <Sheet>
+                <SheetTrigger>Edit profile</SheetTrigger>
+                <SheetContent>
+                  <Fitness userConfig={userConfig} />
+                </SheetContent>
+              </Sheet>
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {toggleEdit ? <Fitness userConfig={userConfig} /> : null}
             <section className="mb-8">
               <Table>
                 <TableHeader>
@@ -722,16 +806,22 @@ function AppView({
                       {userConfig?.weight?.toFixed(2)}
                       {userConfig?.metric_type === `IMPERIAL` ? `lbs` : `kg`}
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {userConfig?.weight_loss_goal?.total.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {parseFloat(userConfig?.weight) -
-                        parseInt(
-                          userConfig?.weight_loss_goal?.total.toFixed(2),
-                          10
-                        )}
-                    </TableCell>
+                    {userConfig?.weight_loss_goal ? (
+                      <TableCell className="font-medium">
+                        {userConfig?.weight_loss_goal?.total.toFixed(2)}
+                      </TableCell>
+                    ) : null}
+                    {userConfig?.weight_loss_goal ? (
+                      <TableCell className="font-medium">
+                        {parseFloat(userConfig?.weight || "0") -
+                          parseInt(
+                            (userConfig?.weight_loss_goal?.total || 0).toFixed(
+                              2
+                            ),
+                            10
+                          )}
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 </TableBody>
               </Table>
@@ -752,27 +842,34 @@ function AppView({
                     <TableCell className="font-medium">
                       {userConfig?.baseXP?.toFixed(2)}
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {userConfig?.totalXP} /
-                      {5000 *
-                        (parseFloat(userConfig?.weight) -
-                          parseInt(
-                            userConfig?.weight_loss_goal?.total.toFixed(2),
-                            10
-                          ))}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {(
-                        (userConfig?.totalXP /
-                          (5000 *
-                            (parseFloat(userConfig?.weight) -
-                              parseInt(
-                                userConfig?.weight_loss_goal?.total.toFixed(2),
-                                10
-                              )))) *
-                        100
-                      ).toFixed(2)}
-                    </TableCell>
+                    {userConfig?.weight_loss_goal ? (
+                      <TableCell className="font-medium">
+                        {userConfig?.totalXP} /
+                        {5000 *
+                          (parseFloat(userConfig?.weight) -
+                            parseInt(
+                              userConfig?.weight_loss_goal?.total.toFixed(2),
+                              10
+                            ))}
+                      </TableCell>
+                    ) : null}
+
+                    {userConfig?.weight_loss_goal ? (
+                      <TableCell className="font-medium">
+                        {(
+                          (userConfig?.totalXP /
+                            (5000 *
+                              (parseFloat(userConfig?.weight) -
+                                parseInt(
+                                  userConfig?.weight_loss_goal?.total.toFixed(
+                                    2
+                                  ),
+                                  10
+                                )))) *
+                          100
+                        ).toFixed(2)}
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 </TableBody>
               </Table>
@@ -808,62 +905,64 @@ function AppView({
               </Accordion>
             </div>
 
-            <div className="mt-8 mb-8">
-              <h1 className="text-lg font-extrabold">Tracker</h1>
+            {tx?.length > 0 ? (
+              <div className="mt-8 mb-8">
+                <h1 className="text-lg font-extrabold">Tracker</h1>
 
-              <AddActivity />
+                <AddActivity />
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[120px]">Date</TableHead>
-                    <TableHead>Base XP</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead>Consumed</TableHead>
-                    <TableHead>Total XP</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    {tx?.map((t) => {
-                      console.log(
-                        t,
-                        parseFloat(userConfig?.baseXP?.toFixed(2)) +
-                          parseInt(t?.activeXP || "0", 10)
-                        // parseInt(t?.consumptionXP || "0", 10)
-                      );
-                      return (
-                        <>
-                          {" "}
-                          <TableCell className="font-medium">
-                            {new Date(t.created_at)?.toLocaleDateString(
-                              "en-us",
-                              {
-                                weekday: "long",
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {userConfig?.baseXP?.toFixed(2)}
-                          </TableCell>
-                          <TableCell>{t?.activeXP}</TableCell>
-                          <TableCell>{t?.consumptionXP}</TableCell>
-                          <TableCell>
-                            {parseFloat(userConfig?.baseXP?.toFixed(2)) +
-                              parseInt(t?.activeXP || "0", 10) -
-                              parseInt(t?.consumptionXP || "0", 10)}
-                          </TableCell>
-                        </>
-                      );
-                    })}
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-            <WeightChart />
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[120px]">Date</TableHead>
+                      <TableHead>Base XP</TableHead>
+                      <TableHead>Active</TableHead>
+                      <TableHead>Consumed</TableHead>
+                      <TableHead>Total XP</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      {tx?.map((t) => {
+                        console.log(
+                          t,
+                          parseFloat(userConfig?.baseXP?.toFixed(2)) +
+                            parseInt(t?.activeXP || "0", 10)
+                          // parseInt(t?.consumptionXP || "0", 10)
+                        );
+                        return (
+                          <>
+                            {" "}
+                            <TableCell className="font-medium">
+                              {new Date(t.created_at)?.toLocaleDateString(
+                                "en-us",
+                                {
+                                  weekday: "long",
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                }
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {userConfig?.baseXP?.toFixed(2)}
+                            </TableCell>
+                            <TableCell>{t?.activeXP}</TableCell>
+                            <TableCell>{t?.consumptionXP}</TableCell>
+                            <TableCell>
+                              {parseFloat(userConfig?.baseXP?.toFixed(2)) +
+                                parseInt(t?.activeXP || "0", 10) -
+                                parseInt(t?.consumptionXP || "0", 10)}
+                            </TableCell>
+                          </>
+                        );
+                      })}
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            ) : null}
+            <WeightChart tx={tx} />
           </CardContent>
         </Card>
       </section>
