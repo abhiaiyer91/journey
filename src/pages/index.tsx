@@ -2,6 +2,8 @@
 import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { RocketIcon } from "@radix-ui/react-icons";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Accordion,
   AccordionContent,
@@ -407,33 +409,26 @@ function AddWeight({ userConfig, refetch }) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Add Weight</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="value"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input placeholder="Value in lbs" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="value"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Input placeholder="Value in lbs" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <div className="text-right mt-4">
-              <Button type="submit">Submit</Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+        <div className="text-right mt-4">
+          <Button type="submit">Submit</Button>
+        </div>
+      </form>
+    </Form>
   );
 }
 
@@ -688,6 +683,43 @@ function AppView({
             </Sheet>
           </div>
         </div>
+
+        <section className="flex">
+          <Drawer>
+            <DrawerTrigger>
+              <Button className="mr-2">Track XP</Button>
+            </DrawerTrigger>
+            <DrawerContent>
+              <div className="pb-8 mx-auto max-w-96" style={{ width: `100%` }}>
+                <p className="mb-4">Integrations coming soon.</p>
+                <ActivityActiveState
+                  userConfig={userConfig}
+                  disableCard
+                  refetch={refetch}
+                  hasCancel
+                  onFinish={() => {}}
+                />
+              </div>
+            </DrawerContent>
+          </Drawer>
+          <Drawer>
+            <DrawerTrigger>
+              <Button variant="outline" className="mr-2">Track weight</Button>
+            </DrawerTrigger>
+            <DrawerContent>
+              <AddWeight userConfig={userConfig} refetch={refetch} />
+            </DrawerContent>
+          </Drawer>
+          <Drawer>
+            <DrawerTrigger>
+              <Button variant="outline">Edit target</Button>
+            </DrawerTrigger>
+            <DrawerContent>
+              <AddWeightTarget userConfig={userConfig} refetch={refetch} />
+            </DrawerContent>
+          </Drawer>
+        </section>
+
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -853,48 +885,6 @@ function AppView({
             </Card>
           </div>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle></CardTitle>
-            <CardDescription></CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-8">
-              <h1 className="text-lg font-extrabold">How it works</h1>
-              <Accordion type="single" collapsible>
-                <AccordionItem value="item-0">
-                  <AccordionTrigger>Add a weight target</AccordionTrigger>
-                  <AccordionContent>
-                    <AddWeightTarget
-                      userConfig={userConfig}
-                      refetch={refetch}
-                    />
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="item-1">
-                  <AccordionTrigger>Record your weight daily</AccordionTrigger>
-                  <AccordionContent>
-                    <AddWeight userConfig={userConfig} refetch={refetch} />
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="item-2">
-                  <AccordionTrigger>Track XP</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="mb-4">Integrations coming soon.</p>
-                    <ActivityActiveState
-                      disableHeader
-                      refetch={refetch}
-                      userConfig={userConfig}
-                      onFinish={() => {
-                        // setActive(false);
-                      }}
-                    />
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
-          </CardContent>
-        </Card>
       </>
     );
   }
