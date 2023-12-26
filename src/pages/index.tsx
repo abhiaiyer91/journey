@@ -71,6 +71,7 @@ import { useRouter } from "next/router";
 import { UserNav } from "@/components/layout";
 import { AddHydration } from "@/components/Hydration";
 import { Overview } from "@/components/Overview";
+import { Progress } from "@/components/ui/progress";
 
 function startOfDay() {
   var start = new Date();
@@ -632,10 +633,10 @@ function ActivityActiveState({
 
 function AddActivity({ userConfig, refetch }) {
   return (
-    <section className="text-right">
+    <section className="text-left">
       <Drawer>
         <DrawerTrigger>
-          <CardDescription>Add Activity</CardDescription>
+          <CardDescription className="underline">Add Activity</CardDescription>
         </DrawerTrigger>
         <DrawerContent>
           <div className="pb-8 mx-auto max-w-96" style={{ width: `100%` }}>
@@ -710,7 +711,8 @@ function AppView({
                 <p className="text-xs text-muted-foreground">
                   Remaining: {` `}
                   {userConfig?.weight_loss_goal
-                    ? parseInt(userConfig?.weight_loss_goal?.total, 10)
+                    ? parseInt(userConfig?.weight, 10) -
+                      parseInt(userConfig?.weight_loss_goal?.total, 10)
                     : ``}
                   {userConfig?.metric_type === `IMPERIAL` ? `lbs` : `kg`}
                 </p>
@@ -725,6 +727,51 @@ function AppView({
                   {userConfig?.hydration?.value}oz
                 </div>
                 <AddHydration userConfig={userConfig} refetch={refetch} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Spec</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {new Intl.NumberFormat("en-US").format(
+                    userConfig?.baseXP?.toFixed(2)
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  TDEE:{" "}
+                  {new Intl.NumberFormat("en-US").format(
+                    userConfig?.tdee?.toFixed(2)
+                  )}
+                </p>
+
+                <div>
+                  <Progress
+                    value={(
+                      (userConfig?.totalXP /
+                        (5000 *
+                          (parseFloat(userConfig?.weight) -
+                            parseInt(
+                              userConfig?.weight_loss_goal?.total,
+                              10
+                            )))) *
+                      100
+                    ).toFixed(2)}
+                  />
+
+                  {userConfig?.weight_loss_goal ? (
+                    <p className="text-xs text-right text-muted-foreground">
+                      {userConfig?.totalXP} /
+                      {new Intl.NumberFormat("en-US").format(
+                        5000 *
+                          (parseFloat(userConfig?.weight) -
+                            parseInt(userConfig?.weight_loss_goal?.total, 10))
+                      )}
+                      XP
+                    </p>
+                  ) : null}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -812,52 +859,6 @@ function AppView({
             <CardDescription></CardDescription>
           </CardHeader>
           <CardContent>
-            <section className="mb-8">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">TDEE</TableHead>
-                    <TableHead className="w-[100px]">Base XP</TableHead>
-                    <TableHead className="w-[100px]">XP Total</TableHead>
-                    <TableHead className="w-[100px]">% Complete</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      {userConfig?.tdee?.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {userConfig?.baseXP?.toFixed(2)}
-                    </TableCell>
-                    {userConfig?.weight_loss_goal ? (
-                      <TableCell className="font-medium">
-                        {userConfig?.totalXP} /
-                        {5000 *
-                          (parseFloat(userConfig?.weight) -
-                            parseInt(userConfig?.weight_loss_goal?.total, 10))}
-                      </TableCell>
-                    ) : null}
-
-                    {userConfig?.weight_loss_goal && userConfig?.totalXP ? (
-                      <TableCell className="font-medium">
-                        {(
-                          (userConfig?.totalXP /
-                            (5000 *
-                              (parseFloat(userConfig?.weight) -
-                                parseInt(
-                                  userConfig?.weight_loss_goal?.total,
-                                  10
-                                )))) *
-                          100
-                        ).toFixed(2)}
-                      </TableCell>
-                    ) : null}
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </section>
-
             <div className="mb-8">
               <h1 className="text-lg font-extrabold">How it works</h1>
               <Accordion type="single" collapsible>
@@ -1009,6 +1010,7 @@ export default function Home() {
       <div className="border-b">
         <div className="flex h-16 items-center px-4">
           <div className="font-extrabold">Journey</div>
+
           <div className="ml-auto flex items-center space-x-4">
             <UserNav userConfig={userConfig} />
           </div>
