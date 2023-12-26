@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createClient } from "@supabase/supabase-js";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Accordion,
@@ -65,9 +64,11 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import "../lib/globals.css";
-import "react-tabs/style/react-tabs.css";
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/router";
+import { UserNav } from "@/components/layout";
 
 const Chart = dynamic(() => import("react-charts").then((mod) => mod.Chart), {
   ssr: false,
@@ -124,7 +125,7 @@ function WeightChart({ tx }) {
 
         setSerieData(sD);
       });
-  });
+  }, []);
 
   const primaryAxis = React.useMemo(
     () => ({
@@ -137,7 +138,7 @@ function WeightChart({ tx }) {
     () => [
       {
         getValue: (datum: any) => parseInt(datum.value, 10),
-        elementType: `line`,
+        elementType: `line` as any,
       },
     ],
     []
@@ -222,14 +223,7 @@ function WeightChart({ tx }) {
   );
 }
 
-const userId = `1`;
-
 // Create a single supabase client for interacting with your database
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_API_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_API_KEY!
-);
 
 function TDEEForm({ form, metric_type, setTD }) {
   return (
@@ -238,7 +232,7 @@ function TDEEForm({ form, metric_type, setTD }) {
         control={form.control}
         name="height"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="mb-2">
             <FormLabel>
               Height {metric_type === `IMPERIAL` ? `(ft)` : `(cm)`}
             </FormLabel>
@@ -289,7 +283,7 @@ function TDEEForm({ form, metric_type, setTD }) {
         control={form.control}
         name="weight"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="mb-2">
             <FormLabel>
               Weight {metric_type === `IMPERIAL` ? `(lb)` : `(kg)`}
             </FormLabel>
@@ -308,7 +302,7 @@ function TDEEForm({ form, metric_type, setTD }) {
         control={form.control}
         name="activity"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="mb-4">
             <FormLabel>Activity</FormLabel>
             <FormControl>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -336,12 +330,11 @@ function BasicInfo({ form }) {
   // 1. Define your form.
   return (
     <section>
-      <h2>Basic Information</h2>
       <FormField
         control={form.control}
         name="name"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="mb-2">
             <FormLabel>Name</FormLabel>
             <FormControl>
               <Input placeholder="John" {...field} />
@@ -354,7 +347,7 @@ function BasicInfo({ form }) {
         control={form.control}
         name="gender"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="mb-2">
             <FormLabel>Gender</FormLabel>
             <FormControl>
               <RadioGroup
@@ -379,7 +372,7 @@ function BasicInfo({ form }) {
         control={form.control}
         name="age"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="mb-4">
             <FormLabel>Age</FormLabel>
             <FormControl>
               <Input placeholder="32" {...field} />
@@ -394,7 +387,7 @@ function BasicInfo({ form }) {
 
 function TDEECalculator({ form, setTD }) {
   return (
-    <section>
+    <section className="mb-2">
       <Tabs defaultValue="IMPERIAL" className="w-[400px]">
         <TabsList>
           <TabsTrigger value="IMPERIAL">Imperial</TabsTrigger>
@@ -411,13 +404,15 @@ function TDEECalculator({ form, setTD }) {
   );
 }
 
-function Fitness({ userConfig }) {
+function Fitness({ userConfig, hasCancel = false, userId, refetch }) {
   // Fetch Apple HealthKit Data
   // TDEE CALCULATOR
   // CALORIES PER LB OF FAT
   // MFP or
   // Calendar
   // TOTAL REMAINING
+
+  console.log(userConfig, userId);
 
   const [tde, setTDE] = useState(0);
 
@@ -432,9 +427,10 @@ function Fitness({ userConfig }) {
       metric_type: "IMPERIAL",
       name: userConfig?.name,
       ...userConfig,
-      height: `${userConfig?.height}`,
-      weight: `${userConfig?.weight}`,
-      age: `${userConfig?.age}`,
+      user_id: userId,
+      height: userConfig?.height ? `${userConfig?.height}` : ``,
+      weight: `${userConfig?.weight || ``}`,
+      age: `${userConfig?.age || ``}`,
     },
   });
 
@@ -460,22 +456,32 @@ function Fitness({ userConfig }) {
       .from("user_config")
       .upsert({
         ...values,
-        id: userId,
+        id: userConfig?.id,
+        user_id: userId,
         tdee: result * activityMultiplier[values.activity],
         baseXP: result * activityMultiplier[values.activity] - 500,
       })
       .then(({ data, error }) => {
         console.log(error, data);
+
+        return refetch();
       });
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)}>
         <BasicInfo form={form} />
         <TDEECalculator setTD={setTD} form={form} />
 
-        <Button type="submit">Submit</Button>
+        <div className="text-right mt-4">
+          {hasCancel && (
+            <DrawerClose>
+              <Button variant="outline">Cancel</Button>
+            </DrawerClose>
+          )}
+          <Button type="submit">Submit</Button>
+        </div>
       </form>
     </Form>
   );
@@ -488,7 +494,7 @@ enum AppMode {
   DASHBOARD = "DASHBOARD",
 }
 
-function AddWeight() {
+function AddWeight({ userConfig }) {
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
@@ -518,7 +524,7 @@ function AddWeight() {
       .update({
         weight: parseFloat(values?.value),
       })
-      .eq("id", userId);
+      .eq("id", userConfig?.id);
   }
 
   return (
@@ -552,7 +558,7 @@ function AddWeight() {
   );
 }
 
-function AddWeightTarget() {
+function AddWeightTarget({ userConfig }) {
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
@@ -567,14 +573,14 @@ function AddWeightTarget() {
     const transaction = await supabase
       .from("weight_loss_goal")
       .select()
-      .eq("user_id", userId)
+      .eq("user_id", userConfig?.id)
       .single();
 
     await supabase.from("weight_loss_goal").upsert({
       created_at: start.toUTCString(),
       ...transaction?.data,
       description: `Weight loss goal`,
-      user_id: userId,
+      user_id: userConfig?.id,
       total: values.value,
     });
   }
@@ -712,13 +718,12 @@ function ActivityActiveState({
           )}
         />
 
-        <div className="text-right">
+        <div className="text-right mt-4">
           {hasCancel && (
             <DrawerClose>
               <Button variant="outline">Cancel</Button>
             </DrawerClose>
           )}
-
           <Button type="submit">Submit</Button>
         </div>
       </form>
@@ -765,12 +770,13 @@ function AddActivity() {
 }
 
 function AppView({
-  activeState,
   tx,
   userConfig,
+  refetch,
 }: {
+  tx;
+  refetch;
   userConfig: any;
-  activeState: AppMode;
 }) {
   const [toggleEdit, setToggleEdit] = useState(false);
 
@@ -784,7 +790,11 @@ function AppView({
               <Sheet>
                 <SheetTrigger>Edit profile</SheetTrigger>
                 <SheetContent>
-                  <Fitness userConfig={userConfig} />
+                  <Fitness
+                    userConfig={userConfig}
+                    userId={userConfig?.userId}
+                    refetch={refetch}
+                  />
                 </SheetContent>
               </Sheet>
             </CardDescription>
@@ -881,13 +891,13 @@ function AppView({
                 <AccordionItem value="item-0">
                   <AccordionTrigger>Add a weight target</AccordionTrigger>
                   <AccordionContent>
-                    <AddWeightTarget />
+                    <AddWeightTarget userConfig={userConfig} />
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="item-1">
                   <AccordionTrigger>Record your weight daily</AccordionTrigger>
                   <AccordionContent>
-                    <AddWeight />
+                    <AddWeight userConfig={userConfig} />
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="item-2">
@@ -969,73 +979,118 @@ function AppView({
     );
   }
 
-  return <Fitness userConfig={userConfig} />;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>The Basics</CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        <Fitness
+          userConfig={userConfig}
+          userId={userConfig?.userId}
+          refetch={refetch}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+async function getUserConfig({ router }) {
+  const result = await supabase.auth.getSession();
+  const userId = result?.data?.session?.user?.id;
+
+  if (!userId) {
+    return router.push("/login");
+  }
+
+  const { data } = await supabase
+    .from("user_config")
+    .select()
+    .eq("user_id", userId)
+    .single();
+
+  if (!data) {
+    return {
+      userId,
+      email: result?.data?.session?.user?.email,
+    };
+  }
+
+  const weightLossGoal = await supabase
+    .from("weight_loss_goal")
+    .select()
+    .eq("user_id", data?.id)
+    .single();
+
+  const tx = await supabase
+    .from("transaction")
+    .select()
+    .eq("user_id", data?.id);
+
+  const totalCal = tx?.data?.map(({ activeXP, consumptionXP }) => {
+    return (
+      parseInt(data?.baseXP, 10) +
+      parseInt(activeXP, 10) -
+      parseInt(consumptionXP, 10)
+    );
+  });
+
+  return {
+    ...data,
+    totalCal,
+    userId,
+    email: result?.data?.session?.user?.email,
+    tx,
+    weight_loss_goal: weightLossGoal?.data,
+  };
 }
 
 export default function Home() {
-  const [activeState, setActiveState] = useState<AppMode>(AppMode.DASHBOARD);
   const [userConfig, setUserConfig] = useState({});
+  const [loading, setLoading] = useState(true);
   const [tx, setTx] = useState([]);
 
-  const getUserConfig = async () => {
-    const { data, error } = await supabase
-      .from("user_config")
-      .select()
-      .single();
+  const router = useRouter();
 
-    const result = await supabase
-      .from("weight_loss_goal")
-      .select()
-      .eq("user_id", userId)
-      .single();
+  const refetch = () => {
+    setLoading(true);
+    getUserConfig({ router }).then((data) => {
+      setUserConfig(data);
 
-    const tx = await supabase.from("transaction").select();
+      if (data?.tx) {
+        setTx(data?.tx);
+      }
 
-    const totalCal = tx?.data?.map(({ activeXP, consumptionXP }) => {
-      return (
-        parseInt(data?.baseXP, 10) +
-        parseInt(activeXP, 10) -
-        parseInt(consumptionXP, 10)
-      );
+      setLoading(false);
     });
-
-    return {
-      ...data,
-      weight_loss_goal: result?.data,
-      totalXP: totalCal?.reduce((partialSum, a) => partialSum + a, 0),
-    };
-  };
-
-  const transactions = async () => {
-    const { data, error } = await supabase.from("transaction").select();
-
-    return data;
   };
 
   useEffect(() => {
-    getUserConfig().then((data) => {
-      setUserConfig(data);
-    });
-
-    transactions().then((data) => {
-      if (data) {
-        setTx(data);
-      }
-    });
-  }, []);
+    refetch();
+  }, [refetch]);
 
   return (
-    <main className="max-w-xl mx-auto">
-      <section>
-        <div>
-          <div className="text-center mt-5 mb-10">
-            <h1 className="text-lg text-3xl font-bold">Welcome to Journey</h1>
-            <p>Journey helps manage and track your goals.</p>
+    <>
+      <div className="border-b">
+        <div className="flex h-16 items-center px-4">
+          <div className="font-extrabold">Journey</div>
+          <div className="ml-auto flex items-center space-x-4">
+            <UserNav userConfig={userConfig} />
           </div>
-
-          <AppView activeState={activeState} userConfig={userConfig} tx={tx} />
         </div>
-      </section>
-    </main>
+      </div>
+      <main className="max-w-xl mx-auto">
+        <section>
+          <div>
+            <div className="text-center mt-5 mb-10"></div>
+
+            {loading ? null : (
+              <AppView userConfig={userConfig} tx={tx} refetch={refetch} />
+            )}
+          </div>
+        </section>
+      </main>
+    </>
   );
 }
