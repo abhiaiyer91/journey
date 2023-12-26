@@ -657,21 +657,41 @@ function ActivityActiveState({
 
     let value = parseInt(values.value, 10);
 
+    let protein = values?.protein;
+    let carb = values?.carb;
+    let fat = values?.fat;
+
     if (values.type === "ACTIVE_CAL" && transaction?.data) {
       value = parseInt(transaction?.data?.activeXP || "0", 10) + value;
       updateOb = { activeXP: value };
     } else {
       value = parseInt(transaction?.data?.consumptionXP || "0", 10) + value;
       updateOb = { consumptionXP: value };
+
+      if (protein) {
+        protein = `${
+          parseFloat(transaction?.data?.protein || "0") + parseFloat(protein)
+        }`;
+      }
+
+      if (fat) {
+        fat = `${parseFloat(transaction?.data?.fat || "0") + parseFloat(fat)}`;
+      }
+
+      if (carb) {
+        carb = `${
+          parseFloat(transaction?.data?.carb || "0") + parseFloat(carb)
+        }`;
+      }
     }
 
     await supabase.from("transaction").upsert({
       created_at: start.toUTCString(),
       ...transaction?.data,
       ...updateOb,
-      protein: values?.protein,
-      fat: values?.fat,
-      carb: values?.carb,
+      protein,
+      fat,
+      carb,
     });
 
     onFinish();
@@ -725,10 +745,12 @@ function ActivityActiveState({
             setFieldValue={(val) => {
               if (val) {
                 Object.entries(val).forEach(([k, v]) => {
-                  if (k === `calories`) {
-                    return form.setValue("value", `${v}`);
+                  if (v) {
+                    if (k === `calories`) {
+                      return form.setValue("value", `${v}`);
+                    }
+                    return form.setValue(k as any, `${v}`);
                   }
-                  return form.setValue(k as any, `${v}`);
                 });
               }
             }}
@@ -1030,35 +1052,7 @@ function AppView({
 
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Current Weight
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {userConfig?.weight?.toFixed(2)}
-                  {userConfig?.metric_type === `IMPERIAL` ? `lbs` : `kg`}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Target: {` `}
-                  {userConfig?.weight_loss_goal
-                    ? parseInt(userConfig?.weight_loss_goal?.total, 10)
-                    : ``}
-                  {userConfig?.metric_type === `IMPERIAL` ? `lbs` : `kg`}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Remaining: {` `}
-                  {userConfig?.weight_loss_goal
-                    ? parseInt(userConfig?.weight, 10) -
-                      parseInt(userConfig?.weight_loss_goal?.total, 10)
-                    : ``}
-                  {userConfig?.metric_type === `IMPERIAL` ? `lbs` : `kg`}
-                </p>
-              </CardContent>
-            </Card>
-
+            {" "}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Spec</CardTitle>
@@ -1106,13 +1100,30 @@ function AppView({
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Hydration</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Current Weight
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {userConfig?.hydration?.value}oz
+                  {userConfig?.weight?.toFixed(2)}
+                  {userConfig?.metric_type === `IMPERIAL` ? `lbs` : `kg`}
                 </div>
-                <AddHydration userConfig={userConfig} refetch={refetch} />
+                <p className="text-xs text-muted-foreground">
+                  Target: {` `}
+                  {userConfig?.weight_loss_goal
+                    ? parseInt(userConfig?.weight_loss_goal?.total, 10)
+                    : ``}
+                  {userConfig?.metric_type === `IMPERIAL` ? `lbs` : `kg`}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Remaining: {` `}
+                  {userConfig?.weight_loss_goal
+                    ? parseInt(userConfig?.weight, 10) -
+                      parseInt(userConfig?.weight_loss_goal?.total, 10)
+                    : ``}
+                  {userConfig?.metric_type === `IMPERIAL` ? `lbs` : `kg`}
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -1121,14 +1132,25 @@ function AppView({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  Protein: {userConfig?.todaysTx?.protein}g
+                  Protein: {parseFloat(userConfig?.todaysTx?.protein)?.toFixed(2)}g
                 </div>
                 <div className="text-2xl font-bold">
-                  Carbs: {userConfig?.todaysTx?.carb}g
+                  Carbs: {parseFloat(userConfig?.todaysTx?.carb)?.toFixed(2)}g
                 </div>
                 <div className="text-2xl font-bold">
-                  Fat: {userConfig?.todaysTx?.fat}g
+                  Fat: {parseFloat(userConfig?.todaysTx?.fat)?.toFixed(2)}g
                 </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Hydration</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {userConfig?.hydration?.value}oz
+                </div>
+                <AddHydration userConfig={userConfig} refetch={refetch} />
               </CardContent>
             </Card>
           </div>
