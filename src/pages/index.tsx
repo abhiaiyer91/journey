@@ -1,6 +1,9 @@
 "use client";
 import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { MinusIcon, PlusIcon } from "@radix-ui/react-icons";
+import { Bar, BarChart, ResponsiveContainer } from "recharts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Accordion,
@@ -69,6 +72,13 @@ import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/router";
 import { UserNav } from "@/components/layout";
+import { AddHydration } from "@/components/Hydration";
+
+function startOfDay() {
+  var start = new Date();
+  start.setUTCHours(0, 0, 0, 0);
+  return start;
+}
 
 const Chart = dynamic(() => import("react-charts").then((mod) => mod.Chart), {
   ssr: false,
@@ -494,7 +504,7 @@ enum AppMode {
   DASHBOARD = "DASHBOARD",
 }
 
-function AddWeight({ userConfig }) {
+function AddWeight({ userConfig, refetch }) {
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
@@ -526,6 +536,8 @@ function AddWeight({ userConfig }) {
         weight: parseFloat(values?.value),
       })
       .eq("id", userConfig?.id);
+
+    return refetch();
   }
 
   return (
@@ -625,6 +637,7 @@ function ActivityActiveState({
   hasCancel = false,
   disableCard = false,
   disableHeader = false,
+  refetch,
 }) {
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
@@ -650,15 +663,14 @@ function ActivityActiveState({
         updateOb = { consumptionXP: values.value };
       }
 
-      return supabase
-        .from("transaction")
-        .upsert({
-          created_at: start.toUTCString(),
-          user_id: userConfig?.id,
-          ...transaction?.data,
-          ...updateOb,
-        })
-        .then((d) => console.log(d));
+      await supabase.from("transaction").upsert({
+        created_at: start.toUTCString(),
+        user_id: userConfig?.id,
+        ...transaction?.data,
+        ...updateOb,
+      });
+
+      return refetch();
     }
 
     let value = parseInt(values.value, 10);
@@ -678,6 +690,8 @@ function ActivityActiveState({
     });
 
     onFinish();
+
+    return refetch();
   }
 
   const formComp = (
@@ -751,8 +765,7 @@ function ActivityActiveState({
   );
 }
 
-function AddActivity({ userConfig }) {
-  const [active, setActive] = useState(false);
+function AddActivity({ userConfig, refetch }) {
   return (
     <section className="text-right">
       <Drawer>
@@ -764,10 +777,9 @@ function AddActivity({ userConfig }) {
             <ActivityActiveState
               userConfig={userConfig}
               disableCard
+              refetch={refetch}
               hasCancel
-              onFinish={() => {
-                setActive(false);
-              }}
+              onFinish={() => {}}
             />
           </div>
         </DrawerContent>
@@ -900,7 +912,7 @@ function AppView({
                 <AccordionItem value="item-1">
                   <AccordionTrigger>Record your weight daily</AccordionTrigger>
                   <AccordionContent>
-                    <AddWeight userConfig={userConfig} />
+                    <AddWeight userConfig={userConfig} refetch={refetch} />
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="item-2">
@@ -909,6 +921,7 @@ function AppView({
                     <p className="mb-4">Integrations coming soon.</p>
                     <ActivityActiveState
                       disableHeader
+                      refetch={refetch}
                       userConfig={userConfig}
                       onFinish={() => {
                         // setActive(false);
@@ -919,11 +932,16 @@ function AppView({
               </Accordion>
             </div>
 
+            <div>
+              <h1 className="text-lg font-extrabold mb-2">Hydration (oz)</h1>
+              <AddHydration refetch={refetch} userConfig={userConfig} />
+            </div>
+
             {tx?.length > 0 ? (
               <div className="mt-8 mb-8">
                 <h1 className="text-lg font-extrabold">Tracker</h1>
 
-                <AddActivity userConfig={userConfig} />
+                <AddActivity userConfig={userConfig} refetch={refetch} />
 
                 <Table>
                   <TableHeader>
@@ -1013,6 +1031,15 @@ async function getUserConfig({ router }) {
     };
   }
 
+  const hydration = await supabase
+    .from("hydration")
+    .select()
+    .eq("user_id", data?.id)
+    .eq("created_at", startOfDay().toISOString())
+    .single();
+
+  console.log(hydration);
+
   const weightLossGoal = await supabase
     .from("weight_loss_goal")
     .select()
@@ -1038,6 +1065,7 @@ async function getUserConfig({ router }) {
     ...data,
     totalXP,
     userId,
+    hydration: hydration?.data,
     email: result?.data?.session?.user?.email,
     tx: tx?.data,
     weight_loss_goal: weightLossGoal?.data,
