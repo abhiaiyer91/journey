@@ -92,13 +92,12 @@ function startOfDay() {
   return start;
 }
 
-const Chart = dynamic(() => import("react-charts").then((mod) => mod.Chart), {
-  ssr: false,
-});
-
 const transactionSchema = z.object({
   type: z.string(),
   value: z.string(),
+  protein: z.string().optional(),
+  carb: z.string().optional(),
+  fat: z.string().optional(),
 });
 
 const formSchema = z.object({
@@ -554,7 +553,12 @@ function FoodSearch({ setFieldValue }) {
   );
 
   useEffect(() => {
-    setFieldValue(selectedFood?.calories);
+    setFieldValue({
+      calories: selectedFood?.calories,
+      protein: selectedFood?.protein,
+      fat: selectedFood?.fat,
+      carb: selectedFood?.carb,
+    });
   }, [selectedFood?.calories]);
 
   return (
@@ -665,6 +669,9 @@ function ActivityActiveState({
       created_at: start.toUTCString(),
       ...transaction?.data,
       ...updateOb,
+      protein: values?.protein,
+      fat: values?.fat,
+      carb: values?.carb,
     });
 
     onFinish();
@@ -716,7 +723,14 @@ function ActivityActiveState({
         {formType === `CONSUMPTION_CAL` ? (
           <FoodSearch
             setFieldValue={(val) => {
-              form.setValue("value", `${val}`);
+              if (val) {
+                Object.entries(val).forEach(([k, v]) => {
+                  if (k === `calories`) {
+                    return form.setValue("value", `${v}`);
+                  }
+                  return form.setValue(k as any, `${v}`);
+                });
+              }
             }}
           />
         ) : null}
@@ -1101,6 +1115,22 @@ function AppView({
                 <AddHydration userConfig={userConfig} refetch={refetch} />
               </CardContent>
             </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Macros</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  Protein: {userConfig?.todaysTx?.protein}g
+                </div>
+                <div className="text-2xl font-bold">
+                  Carbs: {userConfig?.todaysTx?.carb}g
+                </div>
+                <div className="text-2xl font-bold">
+                  Fat: {userConfig?.todaysTx?.fat}g
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -1223,8 +1253,6 @@ async function getUserConfig({ router }) {
     .eq("created_at", startOfDay().toISOString())
     .single();
 
-  console.log(hydration);
-
   const weightLossGoal = await supabase
     .from("weight_loss_goal")
     .select()
@@ -1244,8 +1272,6 @@ async function getUserConfig({ router }) {
     );
   });
 
-  console.log({ totalXP });
-
   return {
     ...data,
     totalXP,
@@ -1253,6 +1279,7 @@ async function getUserConfig({ router }) {
     hydration: hydration?.data,
     email: result?.data?.session?.user?.email,
     tx: tx?.data,
+    todaysTx: tx?.data?.[0],
     weight_loss_goal: weightLossGoal?.data,
   };
 }
