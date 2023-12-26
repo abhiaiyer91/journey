@@ -497,13 +497,6 @@ function Fitness({ userConfig, hasCancel = false, userId, refetch }) {
   );
 }
 
-enum AppMode {
-  FITNESS = "FITNESS",
-  HYDRATION = "HYDRATION",
-  FINANCE = "FINANCE",
-  DASHBOARD = "DASHBOARD",
-}
-
 function AddWeight({ userConfig, refetch }) {
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
@@ -801,57 +794,65 @@ function AppView({
 
   if (userConfig?.name) {
     return (
-      <section>
+      <>
+        <div className="flex items-center justify-between space-y-2">
+          <div>
+            <h2 className="text-3xl tracking-tight">
+              Welcome back{" "}
+              <span className="font-bold">{userConfig?.name}!</span>
+            </h2>
+            <Sheet>
+              <SheetTrigger>
+                <p className="text-xs underline">Edit profile</p>
+              </SheetTrigger>
+              <SheetContent>
+                <Fitness
+                  userConfig={userConfig}
+                  userId={userConfig?.userId}
+                  refetch={refetch}
+                />
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Current Weight
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {userConfig?.weight?.toFixed(2)}
+                  {userConfig?.metric_type === `IMPERIAL` ? `lbs` : `kg`}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Target: {` `}
+                  {userConfig?.weight_loss_goal
+                    ? parseInt(userConfig?.weight_loss_goal?.total, 10)
+                    : ``}
+                  {userConfig?.metric_type === `IMPERIAL` ? `lbs` : `kg`}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Remaining: {` `}
+                  {userConfig?.weight_loss_goal
+                    ? parseInt(userConfig?.weight_loss_goal?.total, 10)
+                    : ``}
+                  {userConfig?.metric_type === `IMPERIAL` ? `lbs` : `kg`}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
         <Card>
           <CardHeader>
-            <CardTitle>Welcome back {userConfig?.name}!</CardTitle>
-            <CardDescription>
-              <Sheet>
-                <SheetTrigger>Edit profile</SheetTrigger>
-                <SheetContent>
-                  <Fitness
-                    userConfig={userConfig}
-                    userId={userConfig?.userId}
-                    refetch={refetch}
-                  />
-                </SheetContent>
-              </Sheet>
-            </CardDescription>
+            <CardTitle></CardTitle>
+            <CardDescription></CardDescription>
           </CardHeader>
           <CardContent>
             <section className="mb-8">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">Current</TableHead>
-                    <TableHead className="w-[100px]">Target</TableHead>
-                    <TableHead className="w-[100px]">Remaining</TableHead>
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      {userConfig?.weight?.toFixed(2)}
-                      {userConfig?.metric_type === `IMPERIAL` ? `lbs` : `kg`}
-                    </TableCell>
-                    {userConfig?.weight_loss_goal ? (
-                      <TableCell className="font-medium">
-                        {parseInt(userConfig?.weight_loss_goal?.total, 10)}
-                      </TableCell>
-                    ) : null}
-                    {userConfig?.weight_loss_goal ? (
-                      <TableCell className="font-medium">
-                        {parseFloat(userConfig?.weight || "0") -
-                          parseInt(
-                            userConfig?.weight_loss_goal?.total || 0,
-                            10
-                          )}
-                      </TableCell>
-                    ) : null}
-                  </TableRow>
-                </TableBody>
-              </Table>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -989,7 +990,7 @@ function AppView({
             <WeightChart tx={tx} />
           </CardContent>
         </Card>
-      </section>
+      </>
     );
   }
 
@@ -1109,16 +1110,11 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <main className="max-w-xl mx-auto">
-        <section>
-          <div>
-            <div className="text-center mt-5 mb-10"></div>
 
-            {loading ? null : (
-              <AppView userConfig={userConfig} tx={tx} refetch={refetch} />
-            )}
-          </div>
-        </section>
+      <main className="flex-1 space-y-4 p-8 pt-6">
+        {loading ? null : (
+          <AppView userConfig={userConfig} tx={tx} refetch={refetch} />
+        )}
       </main>
     </>
   );
