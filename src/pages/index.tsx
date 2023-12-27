@@ -62,6 +62,7 @@ import { Overview } from "@/components/Overview";
 import { Progress } from "@/components/ui/progress";
 import { FoodSearch } from "@/components/FoodSearch";
 import { useUserConfig } from "@/lib/hooks";
+import { DataTable } from "@/components/DataTable";
 
 function startOfDay() {
   var start = new Date();
@@ -1055,62 +1056,39 @@ function AppView({
                     <TabsTrigger value="CONSUMPTION">Consumption</TabsTrigger>
                   </TabsList>
                   <TabsContent value="ACTIVE">
-                    <Overview tx={tx} type="ACTIVE" chartType="BAR" />
+                    <Overview
+                      userConfig={userConfig}
+                      tx={tx}
+                      type="ACTIVE"
+                      chartType="BAR"
+                    />
                   </TabsContent>
                   <TabsContent value="WEIGHT">
-                    <Overview tx={tx} type="WEIGHT" chartType="LINE" />
+                    <Overview
+                      userConfig={userConfig}
+                      tx={tx}
+                      type="WEIGHT"
+                      chartType="LINE"
+                    />
                   </TabsContent>
                   <TabsContent value="CONSUMPTION">
-                    <Overview tx={tx} type="CONSUMPTION" chartType="BAR" />
+                    <Overview
+                      userConfig={userConfig}
+                      tx={tx}
+                      type="CONSUMPTION"
+                      chartType="BAR"
+                    />
                   </TabsContent>
                 </Tabs>
               </CardContent>
             </Card>
 
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Data</CardTitle>
-
-                <AddActivity userConfig={userConfig} refetch={refetch} />
-              </CardHeader>
-              <CardContent className="pl-2">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[120px]">Date</TableHead>
-                      <TableHead>Spec</TableHead>
-                      <TableHead>Active</TableHead>
-                      <TableHead>Consumed</TableHead>
-                      <TableHead>Total XP</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      {tx?.map((t) => {
-                        return (
-                          <>
-                            {" "}
-                            <TableCell className="font-medium">
-                              {new Date(t.created_at).toISOString()}
-                            </TableCell>
-                            <TableCell>
-                              {userConfig?.baseXP?.toFixed(2)}
-                            </TableCell>
-                            <TableCell>{t?.activeXP}</TableCell>
-                            <TableCell>{t?.consumptionXP}</TableCell>
-                            <TableCell>
-                              {parseFloat(userConfig?.baseXP?.toFixed(2)) +
-                                parseInt(t?.activeXP || "0", 10) -
-                                parseInt(t?.consumptionXP || "0", 10)}
-                            </TableCell>
-                          </>
-                        );
-                      })}
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <DataTable
+              tx={tx}
+              AddActivity={AddActivity}
+              userConfig={userConfig}
+              refetch={refetch}
+            />
           </div>
         </div>
       </>

@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { formatDate } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import {
   Bar,
@@ -10,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 
-export function Overview({ tx, type, chartType }) {
+export function Overview({ tx, type, userConfig, chartType }) {
   let chartData = [];
 
   if (type === "CONSUMPTION") {
@@ -18,13 +19,13 @@ export function Overview({ tx, type, chartType }) {
       tx?.map(({ created_at, consumptionXP }) => {
         return {
           total: parseInt(consumptionXP, 10),
-          name: new Date(created_at).toISOString(),
+          name: formatDate(new Date(created_at)),
         };
       }) || [];
   } else if (type === "ACTIVE") {
     chartData = tx?.map(({ created_at, activeXP }) => {
       return {
-        name: created_at,
+        name: formatDate(new Date(created_at)),
         total: activeXP,
       };
     });
@@ -43,12 +44,13 @@ export function Overview({ tx, type, chartType }) {
       supabase
         .from("weight_tracker")
         .select()
+        .eq("user_id", userConfig?.id)
         .then(({ data }) => {
           const sd =
             data?.map(({ created_at, value }) => {
               return {
                 total: parseInt(value, 10),
-                name: new Date(created_at).toISOString(),
+                name: formatDate(new Date(created_at)),
               };
             }) || [];
 
