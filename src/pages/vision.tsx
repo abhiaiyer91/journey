@@ -53,7 +53,7 @@ function Flow() {
 
       {objs?.map((objI) => {
         return (
-          <div className="mb-4 w-[400px]">
+          <div key={objI} className="mb-4 w-[400px]">
             <Label>Objective</Label>
             <Input
               onChange={(e) =>

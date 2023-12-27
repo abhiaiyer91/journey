@@ -31,7 +31,7 @@ export function DataTable({ userConfig, refetch, tx, AddActivity }) {
           <TableBody>
             {tx?.map((t) => {
               return (
-                <TableRow>
+                <TableRow key={t?.id}>
                   {" "}
                   <TableCell className="font-medium">
                     {formatDate(new Date(t.created_at))}
