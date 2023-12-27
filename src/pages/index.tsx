@@ -350,7 +350,9 @@ function Fitness({ userConfig, hasCancel = false, userId, refetch }) {
         <div className="text-right mt-4">
           {hasCancel && (
             <DrawerClose>
-              <Button variant="outline">Cancel</Button>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
             </DrawerClose>
           )}
           <Button type="submit">Submit</Button>
@@ -655,7 +657,7 @@ function ActivityActiveState({
         <div className="text-right mt-4">
           {hasCancel && (
             <DrawerClose>
-              <Button variant="outline" className="mr-2">
+              <Button type="button" variant="outline" className="mr-2">
                 Cancel
               </Button>
             </DrawerClose>
