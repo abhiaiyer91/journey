@@ -6,11 +6,11 @@ import { useRouter } from "next/router";
 const MyApp = ({ Component, pageProps }) => {
   const { loading, userConfig, tx, refetch } = useUserConfig();
 
+  const router = useRouter();
+
   if (loading) {
     return null;
   }
-
-  const router = useRouter();
 
   if (router.pathname === `/login` || router.pathname === `/signup`) {
     return (
