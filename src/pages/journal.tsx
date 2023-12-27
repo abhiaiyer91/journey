@@ -78,9 +78,9 @@ export default function Journal({ userConfig }) {
       </Sheet>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4">
-        {journals?.map((j) => {
+        {journals?.map((j: any) => {
           return (
-            <Card>
+            <Card key={j?.id}>
               <CardHeader>
                 <CardTitle>{formatDate(new Date(j?.created_at))}</CardTitle>
               </CardHeader>
