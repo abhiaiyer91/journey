@@ -56,11 +56,12 @@ import * as z from "zod";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/router";
-import { UserNav } from "@/components/layout";
+import { MainNav, UserNav } from "@/components/layout";
 import { AddHydration } from "@/components/Hydration";
 import { Overview } from "@/components/Overview";
 import { Progress } from "@/components/ui/progress";
 import { FoodSearch } from "@/components/FoodSearch";
+import { useUserConfig } from "@/lib/hooks";
 
 function startOfDay() {
   var start = new Date();
@@ -922,7 +923,9 @@ function AppView({
           </Drawer>
           <Sheet>
             <SheetTrigger>
-              <Button variant="outline" className="xs:mt-2">Contribute Food Data</Button>
+              <Button variant="outline" className="xs:mt-2">
+                Contribute Food Data
+              </Button>
             </SheetTrigger>
             <SheetContent>
               <FoodForm />
@@ -1156,109 +1159,6 @@ function AppView({
   );
 }
 
-async function getUserConfig({ router }) {
-  const result = await supabase.auth.getSession();
-  const userId = result?.data?.session?.user?.id;
-
-  if (!userId) {
-    return router.push("/login");
-  }
-
-  const { data } = await supabase
-    .from("user_config")
-    .select()
-    .eq("user_id", userId)
-    .single();
-
-  if (!data) {
-    return {
-      userId,
-      email: result?.data?.session?.user?.email,
-    };
-  }
-
-  const hydration = await supabase
-    .from("hydration")
-    .select()
-    .eq("user_id", data?.id)
-    .eq("created_at", startOfDay().toISOString())
-    .single();
-
-  const weightLossGoal = await supabase
-    .from("weight_loss_goal")
-    .select()
-    .eq("user_id", data?.id)
-    .single();
-
-  const tx = await supabase
-    .from("transaction")
-    .select()
-    .eq("user_id", data?.id);
-
-  const totalXP = tx?.data?.map(({ activeXP, consumptionXP }) => {
-    return (
-      parseInt(data?.baseXP, 10) +
-      parseInt(activeXP || "0", 10) -
-      parseInt(consumptionXP || "0", 10)
-    );
-  });
-
-  return {
-    ...data,
-    totalXP,
-    userId,
-    hydration: hydration?.data,
-    email: result?.data?.session?.user?.email,
-    tx: tx?.data,
-    todaysTx: tx?.data?.[0],
-    weight_loss_goal: weightLossGoal?.data,
-  };
-}
-
-export default function Home() {
-  const [userConfig, setUserConfig] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [tx, setTx] = useState([]);
-
-  const router = useRouter();
-
-  const refetch = () => {
-    if (!userConfig) {
-      setLoading(true);
-    }
-
-    getUserConfig({ router }).then((data) => {
-      setUserConfig(data);
-
-      if (data?.tx) {
-        setTx(data?.tx);
-      }
-
-      setLoading(false);
-    });
-  };
-
-  useEffect(() => {
-    refetch();
-  }, []);
-
-  return (
-    <>
-      <div className="border-b">
-        <div className="flex h-16 items-center px-4">
-          <div className="font-extrabold">Journey</div>
-
-          <div className="ml-auto flex items-center space-x-4">
-            <UserNav userConfig={userConfig} />
-          </div>
-        </div>
-      </div>
-
-      <main className="flex-1 space-y-4 p-8 pt-6">
-        {loading ? null : (
-          <AppView userConfig={userConfig} tx={tx} refetch={refetch} />
-        )}
-      </main>
-    </>
-  );
+export default function Home({ userConfig, tx, refetch }) {
+  return <AppView userConfig={userConfig} tx={tx} refetch={refetch} />;
 }

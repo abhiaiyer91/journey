@@ -14,6 +14,42 @@ import { Button } from "./ui/button";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/router";
 
+import Link from "next/link";
+
+import { cn } from "@/lib/utils";
+
+export function MainNav({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLElement>) {
+  return (
+    <nav
+      className={cn("flex items-center space-x-4 lg:space-x-6", className)}
+      {...props}
+    >
+      <Link
+        href="/"
+        className="text-sm font-medium transition-colors hover:text-primary"
+      >
+        Home
+      </Link>
+
+      <Link
+        href="/journal"
+        className="text-sm font-medium transition-colors hover:text-primary"
+      >
+        The Journal
+      </Link>
+      <Link
+        href="/"
+        className="text-sm font-medium transition-colors hover:text-primary"
+      >
+        Challenges
+      </Link>
+    </nav>
+  );
+}
+
 export function UserNav({ userConfig }) {
   const router = useRouter();
   return (
