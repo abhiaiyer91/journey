@@ -46,6 +46,12 @@ export function MainNav({
       >
         Sobriety
       </Link>
+      <Link
+        href="/vision"
+        className="text-sm font-medium transition-colors hover:text-primary"
+      >
+        Vision
+      </Link>
     </nav>
   );
 }
