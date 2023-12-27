@@ -717,19 +717,54 @@ const foodSchema = z.object({
 });
 
 function FoodForm() {
+  const [searchText, setSearchText] = useState(``);
+
   const form = useForm<z.infer<typeof foodSchema>>({
     resolver: zodResolver(foodSchema),
   });
 
-  async function onSubmit(values: z.infer<typeof foodSchema>) {
-    const result = await supabase.from("food_db").insert(values);
+  useEffect(() => {
+    if (searchText) {
+      const URI = `https://api.edamam.com/api/food-database/v2/parser?app_id=${process.env.NEXT_PUBLIC_FOOD_APP_ID}&app_key=${process.env.NEXT_PUBLIC_FOOD_API}&ingr=${searchText}`;
 
-    console.log(result, "###");
+      fetch(URI)
+        .then((res) => res.json())
+        .then((d) => {
+          console.log(d?.hints?.[0]);
+
+          const measure = d?.hints?.[0]?.measures?.find(
+            ({ label }) => label === `Serving`
+          );
+          const food = d?.hints?.[0]?.food;
+          form.setValue("name", food?.label);
+          form.setValue("identifier", food?.foodId);
+          form.setValue("protein", `${food?.nutrients?.PROCNT || 0}`);
+          form.setValue("fat", `${food?.nutrients?.FAT || 0}`);
+          form.setValue("calories", `${food?.nutrients?.ENERC_KCAL || 0}`);
+          form.setValue("carb", `${food?.nutrients?.CHOCDF || 0}`);
+          form.setValue("barcode", `N/A`);
+          form.setValue("serving_size", `${measure?.weight}g`);
+        });
+    }
+  }, [searchText]);
+
+  async function onSubmit(values: z.infer<typeof foodSchema>) {
+    await supabase.from("food_db").insert(values);
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="mb-6">
+          <FormLabel>Search</FormLabel>
+          <Input
+            type="search"
+            onBlur={(e) => {
+              setSearchText(e.target.value);
+            }}
+          />
+        </div>
+
         <FormField
           control={form.control}
           name="name"
@@ -839,11 +874,11 @@ function FoodForm() {
           )}
         />
 
-        <DrawerClose>
-          <div className="text-right mt-4">
-            <Button type="submit">Submit</Button>
-          </div>
-        </DrawerClose>
+        {/* <DrawerClose> */}
+        <div className="text-right mt-4">
+          <Button type="submit">Submit</Button>
+        </div>
+        {/* </DrawerClose> */}
       </form>
     </Form>
   );
