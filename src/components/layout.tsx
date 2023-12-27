@@ -41,10 +41,10 @@ export function MainNav({
         The Journal
       </Link>
       <Link
-        href="/"
+        href="/sobriety"
         className="text-sm font-medium transition-colors hover:text-primary"
       >
-        Challenges
+        Sobriety
       </Link>
     </nav>
   );
