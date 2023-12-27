@@ -725,17 +725,17 @@ function FoodForm() {
 
   useEffect(() => {
     if (searchText) {
-      const URI = `https://api.edamam.com/api/food-database/v2/parser?app_id=${process.env.NEXT_PUBLIC_FOOD_APP_ID}&app_key=${process.env.NEXT_PUBLIC_FOOD_API}&ingr=${searchText}`;
+      const URI = `https://api.edamam.com/api/food-database/v2/parser?app_id=${process.env.NEXT_PUBLIC_FOOD_APP_ID}&app_key=${process.env.NEXT_PUBLIC_FOOD_API}&nutrition-type=logging&ingr=${searchText}`;
 
       fetch(URI)
         .then((res) => res.json())
         .then((d) => {
-          console.log(d?.hints?.[0]);
-
           const measure = d?.hints?.[0]?.measures?.find(
             ({ label }) => label === `Serving`
           );
           const food = d?.hints?.[0]?.food;
+
+          console.log({ food, measure });
           form.setValue("name", food?.label);
           form.setValue("identifier", food?.foodId);
           form.setValue("protein", `${food?.nutrients?.PROCNT || 0}`);
