@@ -84,7 +84,9 @@ export function FoodSearch({ setFieldValue }) {
                     value === framework.name ? "opacity-100" : "opacity-0"
                   )}
                 />
-                {framework.name}
+                {framework.name?.length > 20
+                  ? framework.name?.slice(0, 19) + `...`
+                  : framework?.name}
               </CommandItem>
             ))}
           </CommandGroup>
