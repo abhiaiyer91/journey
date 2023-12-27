@@ -37,13 +37,23 @@ export function DataTable({ userConfig, refetch, tx, AddActivity }) {
                     <TableCell className="font-medium">
                       {formatDate(new Date(t.created_at))}
                     </TableCell>
-                    <TableCell>{userConfig?.baseXP?.toFixed(2)}</TableCell>
-                    <TableCell>{t?.activeXP}</TableCell>
-                    <TableCell>{t?.consumptionXP}</TableCell>
                     <TableCell>
-                      {parseFloat(userConfig?.baseXP?.toFixed(2)) +
-                        parseInt(t?.activeXP || "0", 10) -
-                        parseInt(t?.consumptionXP || "0", 10)}
+                      {new Intl.NumberFormat("en-US").format(
+                        userConfig?.baseXP?.toFixed(2)
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {new Intl.NumberFormat("en-US").format(t?.activeXP)}
+                    </TableCell>
+                    <TableCell>
+                      {new Intl.NumberFormat("en-US").format(t?.consumptionXP)}
+                    </TableCell>
+                    <TableCell>
+                      {new Intl.NumberFormat("en-US").format(
+                        parseFloat(userConfig?.baseXP?.toFixed(2)) +
+                          parseInt(t?.activeXP || "0", 10) -
+                          parseInt(t?.consumptionXP || "0", 10)
+                      )}
                     </TableCell>
                   </>
                 );
