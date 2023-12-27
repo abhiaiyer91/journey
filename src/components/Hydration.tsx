@@ -15,6 +15,7 @@ import {
 import { Button } from "./ui/button";
 import { CardDescription } from "./ui/card";
 import { supabase } from "@/lib/supabase";
+import { formatDate } from "@/lib/utils";
 
 export function AddHydration({ userConfig, refetch }) {
   const progressVal = ((userConfig?.hydration?.value || 0) / 128) * 100;
@@ -27,13 +28,32 @@ export function AddHydration({ userConfig, refetch }) {
 
   async function submitHydration() {
     const start = new Date();
-    start.setUTCHours(0, 0, 0, 0);
 
-    await supabase.from("hydration").upsert({
-      created_at: start.toUTCString(),
-      user_id: userConfig?.id,
-      value: goal,
-    });
+    const todayHydration = await supabase
+      .from("hydration")
+      .select()
+      .eq("user_id", userConfig?.id)
+      .eq("created_at", formatDate(start))
+      .single();
+
+    console.log(todayHydration?.data);
+
+    if (todayHydration?.data) {
+      await supabase
+        .from("hydration")
+        .update({
+          value: goal,
+        })
+        .eq("id", todayHydration?.data?.id)
+        .eq("user_id", userConfig?.id);
+    } else {
+      await supabase.from("hydration").upsert({
+        created_at: formatDate(start),
+        user_id: userConfig?.id,
+        ...(todayHydration?.data || {}),
+        value: goal,
+      });
+    }
 
     return refetch();
   }

@@ -18,5 +18,5 @@ export function formatDate(date) {
 
   let year = date.getFullYear();
 
-  return month + 1 + "/" + day + "/" + year;
+  return `${month + 1 + "/" + day + "/" + year}`;
 }

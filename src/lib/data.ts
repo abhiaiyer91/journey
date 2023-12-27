@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { startOfDay } from "./utils";
+import { formatDate, startOfDay } from "./utils";
 
 export async function getUserConfig({ router }) {
   const result = await supabase.auth.getSession();
@@ -26,7 +26,7 @@ export async function getUserConfig({ router }) {
     .from("hydration")
     .select()
     .eq("user_id", data?.id)
-    .eq("created_at", startOfDay().toISOString())
+    .eq("created_at", formatDate(new Date()))
     .single();
 
   const weightLossGoal = await supabase
