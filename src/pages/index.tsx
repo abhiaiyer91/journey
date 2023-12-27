@@ -1133,13 +1133,13 @@ function AppView({
               <CardContent>
                 <div className="text-2xl font-bold">
                   Protein:{" "}
-                  {parseFloat(userConfig?.todaysTx?.protein)?.toFixed(2)}g
+                  {parseFloat(userConfig?.todaysTx?.protein || '0')?.toFixed(2)}g
                 </div>
                 <div className="text-2xl font-bold">
-                  Carbs: {parseFloat(userConfig?.todaysTx?.carb)?.toFixed(2)}g
+                  Carbs: {parseFloat(userConfig?.todaysTx?.carb || '0')?.toFixed(2)}g
                 </div>
                 <div className="text-2xl font-bold">
-                  Fat: {parseFloat(userConfig?.todaysTx?.fat)?.toFixed(2)}g
+                  Fat: {parseFloat(userConfig?.todaysTx?.fat || '0')?.toFixed(2)}g
                 </div>
               </CardContent>
             </Card>
