@@ -2,25 +2,7 @@
 import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { RocketIcon } from "@radix-ui/react-icons";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-import { Check, ChevronsUpDown } from "lucide-react";
-
-import { cn } from "@/lib/utils";
-
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Sheet,
   SheetContent,
@@ -33,11 +15,7 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
   DrawerTrigger,
-  DrawerFooter,
 } from "@/components/ui/drawer";
 import {
   Select,
@@ -67,7 +45,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -83,6 +60,7 @@ import { UserNav } from "@/components/layout";
 import { AddHydration } from "@/components/Hydration";
 import { Overview } from "@/components/Overview";
 import { Progress } from "@/components/ui/progress";
+import { FoodSearch } from "@/components/FoodSearch";
 
 function startOfDay() {
   var start = new Date();
@@ -504,107 +482,6 @@ function AddWeightTarget({ userConfig, refetch }) {
         </Form>
       </CardContent>
     </Card>
-  );
-}
-
-const frameworks = [
-  {
-    value: "next.js",
-    label: "Next.js",
-  },
-  {
-    value: "sveltekit",
-    label: "SvelteKit",
-  },
-  {
-    value: "nuxt.js",
-    label: "Nuxt.js",
-  },
-  {
-    value: "remix",
-    label: "Remix",
-  },
-  {
-    value: "astro",
-    label: "Astro",
-  },
-];
-
-function FoodSearch({ setFieldValue }) {
-  const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState("");
-  const [foodList, setFoodList] = React.useState([]);
-
-  useEffect(() => {
-    supabase
-      .from("food_db")
-      .select()
-      .then(({ data }) => {
-        if (data) {
-          setFoodList(data as any);
-        }
-      });
-  }, []);
-
-  const selectedFood = foodList?.find(
-    (framework: any) => framework.name?.toLowerCase() === value
-  ) as any;
-
-  useEffect(() => {
-    setFieldValue({
-      calories: selectedFood?.calories,
-      protein: selectedFood?.protein,
-      fat: selectedFood?.fat,
-      carb: selectedFood?.carb,
-    });
-  }, [selectedFood?.calories]);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-[200px] justify-between"
-        >
-          {value
-            ? (
-                foodList.find(
-                  (framework: any) => framework.name?.toLowerCase() === value
-                ) as any
-              )?.name
-            : "Select from Food DB..."}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
-        <Command>
-          <CommandInput placeholder="Search food DB..." />
-          <CommandEmpty>No Food found.</CommandEmpty>
-          <CommandGroup>
-            {foodList?.map((framework: any) => (
-              <CommandItem
-                key={framework.name}
-                value={framework.name?.toLowerCase()}
-                onSelect={(currentValue) => {
-                  setValue(currentValue === value ? "" : currentValue);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === framework.name ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                {framework.name}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
   );
 }
 
@@ -1133,13 +1010,16 @@ function AppView({
               <CardContent>
                 <div className="text-2xl font-bold">
                   Protein:{" "}
-                  {parseFloat(userConfig?.todaysTx?.protein || '0')?.toFixed(2)}g
+                  {parseFloat(userConfig?.todaysTx?.protein || "0")?.toFixed(2)}
+                  g
                 </div>
                 <div className="text-2xl font-bold">
-                  Carbs: {parseFloat(userConfig?.todaysTx?.carb || '0')?.toFixed(2)}g
+                  Carbs:{" "}
+                  {parseFloat(userConfig?.todaysTx?.carb || "0")?.toFixed(2)}g
                 </div>
                 <div className="text-2xl font-bold">
-                  Fat: {parseFloat(userConfig?.todaysTx?.fat || '0')?.toFixed(2)}g
+                  Fat:{" "}
+                  {parseFloat(userConfig?.todaysTx?.fat || "0")?.toFixed(2)}g
                 </div>
               </CardContent>
             </Card>
@@ -1265,11 +1145,8 @@ function AppView({
         </div>
         <div className="relative z-20 items-center text-lg">
           <p>Everyone starts their journey somewhere.</p>
-          <p>
-            Fill out the information to the left. 
-          </p>
-          <p>This will get your baseline in
-            order.</p>
+          <p>Fill out the information to the left.</p>
+          <p>This will get your baseline in order.</p>
         </div>
       </div>
     </div>
