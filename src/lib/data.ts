@@ -38,17 +38,20 @@ export async function getUserConfig({ router }) {
   const tx = await supabase
     .from("transaction")
     .select()
-    .eq("user_id", data?.id);
+    .eq("user_id", data?.id)
+    .order("created_at", { ascending: false });
 
-  const totalXP = tx?.data?.map(({ activeXP, consumptionXP }) => {
-    return (
-      parseInt(data?.baseXP, 10) +
-      parseInt(activeXP || "0", 10) -
-      parseInt(consumptionXP || "0", 10)
-    );
-  })?.reduce((partialSum, a) => partialSum + a, 0);;
+  const totalXP = tx?.data
+    ?.map(({ activeXP, consumptionXP }) => {
+      return (
+        parseInt(data?.baseXP, 10) +
+        parseInt(activeXP || "0", 10) -
+        parseInt(consumptionXP || "0", 10)
+      );
+    })
+    ?.reduce((partialSum, a) => partialSum + a, 0);
 
-  console.log(totalXP, 'TOTAL')
+  console.log(totalXP, "TOTAL");
 
   return {
     ...data,
