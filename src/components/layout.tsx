@@ -52,6 +52,12 @@ export function MainNav({
       >
         Vision
       </Link>
+      <Link
+        href="/data"
+        className="text-sm font-medium transition-colors hover:text-primary"
+      >
+        Data
+      </Link>
     </nav>
   );
 }

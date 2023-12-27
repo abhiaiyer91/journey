@@ -1,12 +1,26 @@
 import { useUserConfig } from "@/lib/hooks";
 import "../lib/globals.css";
 import { MainNav, UserNav } from "@/components/layout";
+import { useRouter } from "next/router";
 
 const MyApp = ({ Component, pageProps }) => {
   const { loading, userConfig, tx, refetch } = useUserConfig();
 
   if (loading) {
     return null;
+  }
+
+  const router = useRouter();
+
+  if (router.pathname === `/login` || router.pathname === `/signup`) {
+    return (
+      <Component
+        {...pageProps}
+        userConfig={userConfig}
+        tx={tx}
+        refetch={refetch}
+      />
+    );
   }
 
   return (
