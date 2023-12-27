@@ -8,87 +8,105 @@ import "reactflow/dist/style.css";
 
 function Flow() {
   const [keyResults, setKeyResults] = useState<any>({});
+  const [objs, setObjs] = useState([0]);
   const [subKr, setSubKr] = useState([0]);
 
   console.log(keyResults);
 
-  const krToNodes = [
+  const krToNodes = objs?.flatMap((oItem, i) => [
     {
-      id: `${0 + 1}`,
-      data: { label: keyResults.objective },
+      id: `${i + 1}`,
+      data: { label: keyResults?.[oItem]?.objective },
       position: { x: 0 * 200, y: 0 },
     },
-    ...(keyResults?.krs || []).map((v, i) => {
+    ...(keyResults?.[oItem]?.krs || []).map((v, i2) => {
       return {
-        id: `${0 + 1}.${i + 1}`,
+        id: `${i + 1}.${i2 + 1}`,
         data: { label: v },
-        position: { x: 0, y: (i + 1) * 100 },
+        position: { x: 0, y: (i2 + 1) * 100 },
       };
     }),
-  ];
+  ]);
 
-  const edges = [
+  const edges = objs?.flatMap((oItem) => [
     {
-      id: `1-1.1`,
-      source: "1",
-      target: "1.1",
+      id: `${oItem + 1}-${oItem + 1}.1`,
+      source: `${oItem + 1}`,
+      target: `${oItem + 1}.1`,
       label: "need to",
       type: "step",
     },
-    ...(keyResults?.krs || []).map((v, i) => {
+    ...(keyResults?.[oItem]?.krs || []).map((v, i) => {
       return {
-        id: `${0 + 1}.${i + 1}-${0 + 1}.${i + 2}`,
-        source: `${0 + 1}.${i + 1}`,
-        target: `${0 + 1}.${i + 2}`,
+        id: `${oItem + 1}.${i + 1}-${oItem + 1}.${i + 2}`,
+        source: `${oItem + 1}.${i + 1}`,
+        target: `${oItem + 1}.${i + 2}`,
         label: "need to",
         type: "step",
       };
     }),
-  ];
+  ]);
 
-  console.log(edges);
+  console.log(krToNodes, edges)
 
   return (
     <div>
       <h1 className="text-2xl font-semibold tracking-tight mb-2">Vision</h1>
 
-      <div className="mb-4 w-[400px]">
-        <Label>Objective</Label>
-        <Input
-          onChange={(e) =>
-            setKeyResults({ ...keyResults, objective: e.target.value })
-          }
-          value={keyResults["objective"]}
-        />
-        {subKr?.map((item, i, list) => {
-          return (
-            <div className="flex" key={i}>
-              <div className="flex-1">
-                <Label>Key Results</Label>
-                <Input
-                  onBlur={(e) =>
-                    setKeyResults({
-                      ...keyResults,
-                      krs: [...(keyResults?.krs || []), e.target.value],
-                    })
-                  }
-                  value={keyResults["krs"]?.[i]}
-                />
-              </div>
-              {list.length - 1 === i ? (
-                <Button
-                  onClick={() => {
-                    setSubKr([...subKr, i + 1]);
-                  }}
-                  className="self-end ml-4"
-                >
-                  Add
-                </Button>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
+      {objs?.map((objI) => {
+        return (
+          <div className="mb-4 w-[400px]">
+            <Label>Objective</Label>
+            <Input
+              onChange={(e) =>
+                setKeyResults({
+                  ...keyResults,
+                  [objI]: {
+                    ...keyResults[objI],
+                    objective: e.target.value,
+                  },
+                })
+              }
+              value={keyResults?.[objI]?.["objective"]}
+            />
+            {subKr?.map((item, i, list) => {
+              return (
+                <div className="flex" key={i}>
+                  <div className="flex-1">
+                    <Label>Key Results</Label>
+                    <Input
+                      onBlur={(e) =>
+                        setKeyResults({
+                          ...keyResults,
+                          [objI]: {
+                            ...keyResults[objI],
+                            krs: [
+                              ...(keyResults?.[objI]?.krs || []),
+                              e.target.value,
+                            ],
+                          },
+                        })
+                      }
+                      value={keyResults["krs"]?.[i]}
+                    />
+                  </div>
+                  {list.length - 1 === i ? (
+                    <Button
+                      onClick={() => {
+                        setSubKr([...subKr, i + 1]);
+                      }}
+                      className="self-end ml-4"
+                    >
+                      Add
+                    </Button>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+
       <div style={{ height: "600px", width: `100%` }}>
         <ReactFlow nodes={krToNodes} edges={edges}>
           <Background />
