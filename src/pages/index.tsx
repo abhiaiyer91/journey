@@ -76,7 +76,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import "../lib/globals.css";
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabase";
