@@ -514,6 +514,10 @@ function ActivityActiveState({
       .eq("created_at", start.toUTCString())
       .single();
 
+    let protein = values?.protein;
+    let carb = values?.carb;
+    let fat = values?.fat;
+
     let updateOb = {};
     if (!transaction?.data) {
       if (values.type === "ACTIVE_CAL") {
@@ -527,16 +531,15 @@ function ActivityActiveState({
         user_id: userConfig?.id,
         ...transaction?.data,
         ...updateOb,
+        protein,
+        fat,
+        carb,
       });
 
       return refetch();
     }
 
     let value = parseInt(values.value, 10);
-
-    let protein = values?.protein;
-    let carb = values?.carb;
-    let fat = values?.fat;
 
     if (values.type === "ACTIVE_CAL" && transaction?.data) {
       value = parseInt(transaction?.data?.activeXP || "0", 10) + value;
@@ -879,7 +882,7 @@ function AppView({
           </div>
         </div>
 
-        <section className="flex">
+        <section className="flex flex-wrap">
           <Drawer>
             <DrawerTrigger>
               <Button className="mr-2">Track XP</Button>
@@ -919,7 +922,7 @@ function AppView({
           </Drawer>
           <Sheet>
             <SheetTrigger>
-              <Button variant="outline">Contribute Food Data</Button>
+              <Button variant="outline" className="xs:mt-2">Contribute Food Data</Button>
             </SheetTrigger>
             <SheetContent>
               <FoodForm />
