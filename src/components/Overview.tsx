@@ -16,19 +16,24 @@ export function Overview({ tx, type, userConfig, chartType }) {
 
   if (type === "CONSUMPTION") {
     chartData =
-      tx?.map(({ created_at, consumptionXP }) => {
-        return {
-          total: parseInt(consumptionXP, 10),
-          name: formatDate(new Date(created_at)),
-        };
-      }) || [];
+      tx
+        ?.map(({ created_at, consumptionXP }) => {
+          return {
+            total: parseInt(consumptionXP, 10),
+            name: formatDate(new Date(created_at)),
+          };
+        })
+        ?.reverse() || [];
   } else if (type === "ACTIVE") {
-    chartData = tx?.map(({ created_at, activeXP }) => {
-      return {
-        name: formatDate(new Date(created_at)),
-        total: activeXP,
-      };
-    });
+    chartData =
+      tx
+        ?.map(({ created_at, activeXP }) => {
+          return {
+            name: formatDate(new Date(created_at)),
+            total: parseInt(activeXP, 10),
+          };
+        })
+        ?.reverse() || [];
   }
 
   const [serieData, setSerieData] = useState(chartData);
@@ -61,8 +66,6 @@ export function Overview({ tx, type, userConfig, chartType }) {
         });
     }
   }, [type, chartType]);
-
-  console.log(serieData);
 
   return (
     <ResponsiveContainer width="100%" height={350} className="mt-4">

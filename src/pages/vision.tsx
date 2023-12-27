@@ -11,8 +11,6 @@ function Flow() {
   const [objs, setObjs] = useState([0]);
   const [subKr, setSubKr] = useState([0]);
 
-  console.log(keyResults);
-
   const krToNodes = objs?.flatMap((oItem, i) => [
     {
       id: `${i + 1}`,
@@ -47,7 +45,7 @@ function Flow() {
     }),
   ]);
 
-  console.log(krToNodes, edges)
+  console.log(krToNodes, edges);
 
   return (
     <div>

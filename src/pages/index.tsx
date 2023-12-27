@@ -63,6 +63,7 @@ import { Progress } from "@/components/ui/progress";
 import { FoodSearch } from "@/components/FoodSearch";
 import { useUserConfig } from "@/lib/hooks";
 import { DataTable } from "@/components/DataTable";
+import { formatDate } from "@/lib/utils";
 
 function startOfDay() {
   var start = new Date();
@@ -507,7 +508,6 @@ function ActivityActiveState({
 
   async function onSubmit(values: z.infer<typeof transactionSchema>) {
     var start = new Date();
-    start.setUTCHours(0, 0, 0, 0);
 
     console.log({ values }, "###");
 
@@ -515,7 +515,7 @@ function ActivityActiveState({
       .from("transaction")
       .select()
       .eq("user_id", userConfig?.id)
-      .eq("created_at", start.toUTCString())
+      .eq("created_at", formatDate(start))
       .single();
 
     let protein = values?.protein;
@@ -531,7 +531,7 @@ function ActivityActiveState({
       }
 
       await supabase.from("transaction").upsert({
-        created_at: start.toUTCString(),
+        created_at: formatDate(start),
         user_id: userConfig?.id,
         ...transaction?.data,
         ...updateOb,
@@ -570,7 +570,7 @@ function ActivityActiveState({
     }
 
     await supabase.from("transaction").upsert({
-      created_at: start.toUTCString(),
+      created_at: formatDate(start),
       ...transaction?.data,
       ...updateOb,
       protein,
