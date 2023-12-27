@@ -55,21 +55,12 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/router";
-import { MainNav, UserNav } from "@/components/layout";
 import { AddHydration } from "@/components/Hydration";
 import { Overview } from "@/components/Overview";
 import { Progress } from "@/components/ui/progress";
 import { FoodSearch } from "@/components/FoodSearch";
-import { useUserConfig } from "@/lib/hooks";
 import { DataTable } from "@/components/DataTable";
 import { formatDate } from "@/lib/utils";
-
-function startOfDay() {
-  var start = new Date();
-  start.setUTCHours(0, 0, 0, 0);
-  return start;
-}
 
 const transactionSchema = z.object({
   type: z.string(),
@@ -373,21 +364,33 @@ function AddWeight({ userConfig, refetch }) {
 
   async function onSubmit(values: z.infer<typeof transactionSchema>) {
     var start = new Date();
-    start.setUTCHours(0, 0, 0, 0);
 
     const transaction = await supabase
       .from("weight_tracker")
       .select()
-      .eq("created_at", start.toUTCString())
+      .eq("created_at", formatDate(start))
       .single();
 
-    await supabase.from("weight_tracker").upsert({
-      created_at: start.toUTCString(),
-      ...transaction?.data,
-      user_id: userConfig?.id,
-      type: "IMPERIAL",
-      value: values.value,
-    });
+    if (transaction?.data) {
+      await supabase
+        .from("weight_tracker")
+        .update({
+          created_at: formatDate(start),
+          ...transaction?.data,
+          user_id: userConfig?.id,
+          type: "IMPERIAL",
+          value: values.value,
+        })
+        .eq("id", transaction?.data?.id);
+    } else {
+      await supabase.from("weight_tracker").upsert({
+        created_at: formatDate(start),
+        ...transaction?.data,
+        user_id: userConfig?.id,
+        type: "IMPERIAL",
+        value: values.value,
+      });
+    }
 
     await supabase
       .from("user_config")

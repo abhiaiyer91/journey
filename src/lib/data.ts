@@ -46,7 +46,9 @@ export async function getUserConfig({ router }) {
       parseInt(activeXP || "0", 10) -
       parseInt(consumptionXP || "0", 10)
     );
-  });
+  })?.reduce((partialSum, a) => partialSum + a, 0);;
+
+  console.log(totalXP, 'TOTAL')
 
   return {
     ...data,
