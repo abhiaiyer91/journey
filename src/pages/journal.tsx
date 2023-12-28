@@ -158,7 +158,7 @@ export default function Journal({ userConfig }) {
                 <p>
                   Tracking sobriety on a daily basis offers individuals numerous
                   benefits in their journey towards controlling their
-                  relationship with Alchohol.
+                  relationship with alcohol.
                 </p>
 
                 <ul className="list-disc list-inside">
