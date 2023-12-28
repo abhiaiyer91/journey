@@ -41,23 +41,17 @@ export function MainNav({
         The Journal
       </Link>
       <Link
-        href="/sobriety"
-        className="text-sm font-medium transition-colors hover:text-primary"
-      >
-        Sobriety
-      </Link>
-      <Link
         href="/vision"
         className="text-sm font-medium transition-colors hover:text-primary"
       >
         Vision
       </Link>
-      <Link
+      {/* <Link
         href="/data"
         className="text-sm font-medium transition-colors hover:text-primary"
       >
         Data
-      </Link>
+      </Link> */}
     </nav>
   );
 }
