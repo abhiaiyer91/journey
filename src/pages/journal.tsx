@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Card,
   CardContent,
@@ -13,6 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { formatDate } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import {
+  moodToEmoji,
   useCheckinStats,
   useJournalByDay,
   useSobrietyByDay,
@@ -21,7 +23,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function Journal({ userConfig }) {
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [journalText, setJournalText] = useState(``);
 
   const { soberDays, nonSoberDays } = useCheckinStats({ userConfig });
   const { sobrietyCheckin, sobrietyRefetch } = useSobrietyByDay({
@@ -29,10 +30,19 @@ export default function Journal({ userConfig }) {
     userId: userConfig?.id,
   });
 
-  const { journal, journalRefetch } = useJournalByDay({
+  const {
+    journal,
+    journalText,
+    setJournalText,
+    journalRefetch,
+    mood,
+    setMood,
+  } = useJournalByDay({
     date,
     userId: userConfig?.id,
   });
+
+  console.log({ journal, mood });
 
   return (
     <section>
@@ -75,7 +85,9 @@ export default function Journal({ userConfig }) {
                 <div className="text-right">
                   <Sheet>
                     <SheetTrigger>
-                      <Button>Add new entry</Button>
+                      <Button>
+                        {journal?.content ? `Edit` : `Add new`} entry
+                      </Button>
                     </SheetTrigger>
                     <SheetContent>
                       <CardHeader>
@@ -83,6 +95,23 @@ export default function Journal({ userConfig }) {
                       </CardHeader>
                       <CardContent>
                         <div className="grid w-full gap-1.5">
+                          <h1>How was your day?</h1>
+                          <ToggleGroup
+                            size="lg"
+                            type="single"
+                            className="justify-start"
+                            value={`${mood}`}
+                            onValueChange={(v) => {
+                              setMood(v);
+                            }}
+                          >
+                            <ToggleGroupItem value="0">😡</ToggleGroupItem>
+                            <ToggleGroupItem value="1">😰</ToggleGroupItem>
+                            <ToggleGroupItem value="2">😌</ToggleGroupItem>
+                            <ToggleGroupItem value="3">😊</ToggleGroupItem>
+                            <ToggleGroupItem value="4">😃</ToggleGroupItem>
+                          </ToggleGroup>
+
                           <Textarea
                             value={journalText}
                             onChange={(e) => {
@@ -102,7 +131,7 @@ export default function Journal({ userConfig }) {
                                 .from("journal")
                                 .select()
                                 .eq("user_id", userConfig?.id)
-                                .eq("created_at", formatDate(new Date()))
+                                .eq("created_at", formatDate(date))
                                 .single()
                                 .then(({ data }) => {
                                   if (!data) {
@@ -111,7 +140,8 @@ export default function Journal({ userConfig }) {
                                       .insert({
                                         content: journalText,
                                         user_id: userConfig?.id,
-                                        created_at: formatDate(new Date()),
+                                        created_at: formatDate(date),
+                                        mood: parseInt(mood, 10),
                                       })
                                       .then(() => {
                                         journalRefetch();
@@ -121,12 +151,22 @@ export default function Journal({ userConfig }) {
                                       .from(`journal`)
                                       .update({
                                         content: journalText,
+                                        mood: parseInt(mood, 10),
                                       })
                                       .eq("id", data?.id)
                                       .then(() => {
                                         journalRefetch();
                                       });
                                   }
+
+                                  supabase
+                                    .from(`transaction`)
+                                    .update({
+                                      mood: parseInt(mood, 10),
+                                    })
+                                    .eq("user_id", userConfig?.id)
+                                    .eq("created_at", formatDate(date))
+                                    .then((d) => console.log(d));
                                 });
                             }}
                           >
@@ -147,7 +187,10 @@ export default function Journal({ userConfig }) {
                         {formatDate(new Date(journal?.created_at))}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>{journal?.content}</CardContent>
+                    <CardContent>
+                      <div className="mb-2">{moodToEmoji[journal?.mood]}</div>
+                      {journal?.content}
+                    </CardContent>
                   </Card>
                 ) : null}
               </div>

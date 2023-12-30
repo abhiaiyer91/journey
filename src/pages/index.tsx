@@ -1089,12 +1089,13 @@ function AppView({
                 <CardTitle>Activity</CardTitle>
               </CardHeader>
               <CardContent className="pl-2">
-                <Tabs defaultValue="ACTIVE">
+                <Tabs defaultValue="TOTAL">
                   <TabsList>
+                    <TabsTrigger value="TOTAL">Net</TabsTrigger>
                     <TabsTrigger value="ACTIVE">Active</TabsTrigger>
                     <TabsTrigger value="WEIGHT">Weight</TabsTrigger>
                     <TabsTrigger value="CONSUMPTION">Consumption</TabsTrigger>
-                    <TabsTrigger value="TOTAL">Total</TabsTrigger>
+                    <TabsTrigger value="MOOD">Mood</TabsTrigger>
                   </TabsList>
                   <TabsContent value="ACTIVE">
                     <Overview
@@ -1126,6 +1127,14 @@ function AppView({
                       tx={tx}
                       type="TOTAL"
                       chartType="BAR"
+                    />
+                  </TabsContent>
+                  <TabsContent value="MOOD">
+                    <Overview
+                      userConfig={userConfig}
+                      tx={tx}
+                      type="MOOD"
+                      chartType="LINE"
                     />
                   </TabsContent>
                 </Tabs>

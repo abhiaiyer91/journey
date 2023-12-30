@@ -65,11 +65,25 @@ export function useSobrietyByDay({ date, userId }) {
   };
 }
 
+export const moodToEmoji = {
+  "0": `😡`,
+  "1": `😰`,
+  "2": `😌`,
+  "3": `😊`,
+  "4": `😃`,
+};
+
 export function useJournalByDay({ date, userId }): {
   journal: any;
+  mood: string;
+  setMood: any;
+  journalText: string;
+  setJournalText: any;
   journalRefetch: any;
 } {
   const [journal, setJournal] = useState();
+  const [journalText, setJournalText] = useState(``);
+  const [mood, setMood] = useState(``);
 
   function refetch() {
     const createdAt = formatDate(new Date(date as any));
@@ -83,7 +97,11 @@ export function useJournalByDay({ date, userId }): {
       .then(({ data }) => {
         if (data) {
           setJournal(data as any);
+          setJournalText(data?.content || ``);
+          setMood(data?.mood);
         } else {
+          setMood(``);
+          setJournalText(``);
           setJournal(undefined);
         }
       });
@@ -95,6 +113,10 @@ export function useJournalByDay({ date, userId }): {
 
   return {
     journal,
+    mood,
+    setMood,
+    journalText,
+    setJournalText,
     journalRefetch: refetch,
   };
 }

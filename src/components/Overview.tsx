@@ -47,6 +47,16 @@ export function Overview({ tx, type, userConfig, chartType }) {
           };
         })
         ?.reverse() || [];
+  } else if (type === "MOOD") {
+    chartData =
+    tx
+      ?.map(({ mood, created_at }) => {
+        return {
+          name: formatDate(new Date(created_at)),
+          total: mood,
+        };
+      })
+      ?.reverse() || [];
   }
 
   const [serieData, setSerieData] = useState(chartData);
