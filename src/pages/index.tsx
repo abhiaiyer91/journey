@@ -927,7 +927,7 @@ function AppView({
         <section className="flex flex-wrap">
           <Drawer>
             <DrawerTrigger>
-              <Button className="mr-2">Track XP</Button>
+              <Button className="mr-2">Track activity</Button>
             </DrawerTrigger>
             <DrawerContent>
               <div className="pb-8 mx-auto max-w-96" style={{ width: `100%` }}>
@@ -1094,6 +1094,7 @@ function AppView({
                     <TabsTrigger value="ACTIVE">Active</TabsTrigger>
                     <TabsTrigger value="WEIGHT">Weight</TabsTrigger>
                     <TabsTrigger value="CONSUMPTION">Consumption</TabsTrigger>
+                    <TabsTrigger value="TOTAL">Total</TabsTrigger>
                   </TabsList>
                   <TabsContent value="ACTIVE">
                     <Overview
@@ -1116,6 +1117,14 @@ function AppView({
                       userConfig={userConfig}
                       tx={tx}
                       type="CONSUMPTION"
+                      chartType="BAR"
+                    />
+                  </TabsContent>
+                  <TabsContent value="TOTAL">
+                    <Overview
+                      userConfig={userConfig}
+                      tx={tx}
+                      type="TOTAL"
                       chartType="BAR"
                     />
                   </TabsContent>

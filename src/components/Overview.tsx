@@ -26,12 +26,27 @@ export function Overview({ tx, type, userConfig, chartType }) {
         ?.reverse() || [];
   } else if (type === "ACTIVE") {
     chartData =
-      tx?.map(({ created_at, activeXP }) => {
-        return {
-          name: formatDate(new Date(created_at)),
-          total: parseInt(activeXP, 10),
-        };
-      })?.reverse()  || [];
+      tx
+        ?.map(({ created_at, activeXP }) => {
+          return {
+            name: formatDate(new Date(created_at)),
+            total: parseInt(activeXP, 10),
+          };
+        })
+        ?.reverse() || [];
+  } else if (type === "TOTAL") {
+    chartData = chartData =
+      tx
+        ?.map(({ created_at, consumptionXP, activeXP }) => {
+          return {
+            name: formatDate(new Date(created_at)),
+            total:
+              parseFloat(userConfig?.baseXP?.toFixed(2)) +
+              parseInt(activeXP || "0", 10) -
+              parseInt(consumptionXP || "0", 10),
+          };
+        })
+        ?.reverse() || [];
   }
 
   const [serieData, setSerieData] = useState(chartData);

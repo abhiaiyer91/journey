@@ -25,7 +25,7 @@ export function DataTable({ userConfig, refetch, tx, AddActivity }) {
               <TableHead>Spec</TableHead>
               <TableHead>Active</TableHead>
               <TableHead>Consumed</TableHead>
-              <TableHead>Total XP</TableHead>
+              <TableHead>Net</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
