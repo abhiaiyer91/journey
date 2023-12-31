@@ -300,7 +300,7 @@ function Fitness({ userConfig, hasCancel = false, userId, refetch }) {
   });
 
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     let weight = parseInt(values.weight, 10);
     let height = parseInt(values.height, 10);
     if (values.metric_type === `IMPERIAL`) {
@@ -317,20 +317,31 @@ function Fitness({ userConfig, hasCancel = false, userId, refetch }) {
 
     setTD(result * activityMultiplier[values.activity]);
 
-    supabase
-      .from("user_config")
-      .upsert({
+    const currentUserConfig = await supabase
+      .from(`user_config`)
+      .select()
+      .eq(`userId`, userId)
+      .single();
+
+    if (currentUserConfig?.data) {
+      await supabase
+        .from("user_config")
+        .update({
+          ...values,
+          tdee: result * activityMultiplier[values.activity],
+          baseXP: result * activityMultiplier[values.activity] - 500,
+        })
+        .eq(`id`, userConfig?.id);
+    } else {
+      await supabase.from("user_config").insert({
         ...values,
-        id: userConfig?.id,
         user_id: userId,
         tdee: result * activityMultiplier[values.activity],
         baseXP: result * activityMultiplier[values.activity] - 500,
-      })
-      .then(({ data, error }) => {
-        console.log(error, data);
-
-        return refetch();
       });
+    }
+
+    return refetch();
   }
 
   return (
