@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   DialogTrigger,
   Dialog,
@@ -99,35 +100,37 @@ function Flow({ userConfig }) {
         {Object.keys(keyResults ?? {})?.map((objI) => {
           const subKeyResults = keyResults?.[objI]?.["krs"] || [];
           return (
-            <div
+            <Card
               style={{ cursor: "pointer" }}
               key={objI}
-              className="mb-4 w-[200px] mr-5 border-2"
+              className="mb-4 w-[240px] mr-5 border-2"
               onClick={() => setCurrentObjective(objI)}
             >
-              <div className="flex justify-between">
-                <Label>Objective: </Label>
-                <div
-                  onClick={(event) => {
-                    if (event.stopPropagation) event.stopPropagation();
-                    deleteObjective(objI);
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </div>
-              </div>
-              <Label>{keyResults?.[objI]?.["objective"]}</Label>
-              {subKeyResults?.map((item, i) => {
-                return (
-                  <div className="flex" key={i}>
-                    <div className="flex-1">
-                      <Label>Key Result: </Label>
-                      <Label>{subKeyResults?.[i]}</Label>
-                    </div>
+              <CardHeader>
+                <div className="flex justify-between">
+                  <Label>{keyResults?.[objI]?.["objective"]}</Label>
+                  <div
+                    onClick={(event) => {
+                      if (event.stopPropagation) event.stopPropagation();
+                      deleteObjective(objI);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc list-inside">
+                  {subKeyResults?.map((item, i) => {
+                    return (
+                      <li className="flex mb-2" key={i}>
+                        <Label>{subKeyResults?.[i]}</Label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </CardContent>
+            </Card>
           );
         })}
       </div>
