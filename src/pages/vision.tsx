@@ -1,14 +1,25 @@
 import { Button } from "@/components/ui/button";
+import {
+  DialogTrigger,
+  Dialog,
+  DialogOverlay,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/lib/supabase";
+import { DialogPortal } from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import ReactFlow, { Controls, Background } from "reactflow";
 import "reactflow/dist/style.css";
 
 function Flow({ userConfig }) {
   const [keyResults, setKeyResults] = useState<any>({});
+  const [currentObjective, setCurrentObjective] = useState<any>(null);
 
   useEffect(() => {
     async function getVision() {
@@ -64,76 +75,61 @@ function Flow({ userConfig }) {
 
   return (
     <div>
-      <div className="flex">
-        <h1 className="text-2xl font-semibold tracking-tight mb-2 pr-4">
-          Vision
-        </h1>
-        {!!krToNodes?.length && (
-          <Button
-            onClick={() => {
-              saveVision();
-            }}
-          >
-            Save Vision
-          </Button>
-        )}
+      <h1 className="text-2xl font-semibold tracking-tight mb-2 pr-4">
+        Vision
+      </h1>
+      <ObjectiveDialog
+        currentObjective={currentObjective}
+        setCurrentObjective={setCurrentObjective}
+        keyResults={keyResults}
+        setKeyResults={setKeyResults}
+        saveVision={saveVision}
+      />
+      <div className="pt-6 pb-6">
+        <Button
+          onClick={() => {
+            addObjective();
+          }}
+        >
+          Add Objective
+        </Button>
       </div>
+
       <div className="flex">
-        <div className="flex">
-          {Object.keys(keyResults ?? {})?.map((objI) => {
-            const subKeyResults = keyResults?.[objI]?.["krs"] || [];
-            return (
-              <div key={objI} className="mb-4 w-[400px] pr-5">
-                <Label>Objective</Label>
-                <Input
-                  onChange={(e) => changeObjective(objI, e.target.value)}
-                  value={keyResults?.[objI]?.["objective"]}
-                />
-                {subKeyResults?.map((item, i) => {
-                  return (
-                    <div className="flex" key={i}>
-                      <div className="flex-1">
-                        <Label>Key Result</Label>
-                        <Input
-                          onChange={(e) =>
-                            changeKeyResult(objI, i, e.target.value)
-                          }
-                          value={subKeyResults?.[i]}
-                        />
-                      </div>
-                      <Button
-                        onClick={() => {
-                          removeKeyResult(objI, i);
-                        }}
-                        className="self-end ml-4"
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  );
-                })}
-                <div className="pt-2 text-center">
-                  <Button
-                    onClick={() => {
-                      addKeyResult(objI);
-                    }}
-                  >
-                    Add Key Result
-                  </Button>
+        {Object.keys(keyResults ?? {})?.map((objI) => {
+          const subKeyResults = keyResults?.[objI]?.["krs"] || [];
+          return (
+            <div
+              style={{ cursor: "pointer" }}
+              key={objI}
+              className="mb-4 w-[200px] mr-5 border-2"
+              onClick={() => setCurrentObjective(objI)}
+            >
+              <div className="flex justify-between">
+                <Label>Objective: </Label>
+                <div
+                  onClick={(event) => {
+                    if (event.stopPropagation) event.stopPropagation();
+                    deleteObjective(objI);
+                  }}
+                >
+                  <X className="h-4 w-4" />
                 </div>
               </div>
-            );
-          })}
-        </div>
-        <div className="pt-6">
-          <Button
-            onClick={() => {
-              addObjective();
-            }}
-          >
-            Add Objective
-          </Button>
-        </div>
+              <Label>{keyResults?.[objI]?.["objective"]}</Label>
+              {subKeyResults?.map((item, i) => {
+                return (
+                  <div className="flex" key={i}>
+                    <div className="flex-1">
+                      <Label>Key Result: </Label>
+                      <Label>{subKeyResults?.[i]}</Label>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
 
       <div style={{ height: "600px", width: `100%` }}>
@@ -152,58 +148,20 @@ function Flow({ userConfig }) {
     </div>
   );
 
-  function changeObjective(objectIndex, value) {
-    setKeyResults({
-      ...keyResults,
-      [objectIndex]: {
-        ...keyResults[objectIndex],
-        objective: value,
-      },
-    });
-  }
-
-  // TODO: Change this to allow for multiple objectives
   function addObjective() {
     const currentKeyResults = Object.keys(keyResults ?? {}).length;
-    changeObjective(currentKeyResults, "");
+    setCurrentObjective(currentKeyResults);
   }
 
-  function addKeyResult(objectIndex) {
+  async function deleteObjective(objectIndex) {
+    delete keyResults[objectIndex];
     setKeyResults({
       ...keyResults,
-      [objectIndex]: {
-        ...keyResults[objectIndex],
-        krs: [...(keyResults?.[objectIndex]?.krs || []), ""],
-      },
     });
+    await saveVision(keyResults);
   }
 
-  function changeKeyResult(objectIndex, krIndex, value) {
-    const currentKeyResults = [...(keyResults?.[objectIndex]?.krs || [])];
-    currentKeyResults[krIndex] = value;
-    setKeyResults({
-      ...keyResults,
-      [objectIndex]: {
-        ...keyResults[objectIndex],
-        krs: currentKeyResults,
-      },
-    });
-  }
-
-  function removeKeyResult(objectIndex, krIndex) {
-    const currentKeyResults = [
-      ...(keyResults?.[objectIndex]?.krs || []),
-    ]?.filter((_, i) => i !== krIndex);
-    setKeyResults({
-      ...keyResults,
-      [objectIndex]: {
-        ...keyResults[objectIndex],
-        krs: currentKeyResults,
-      },
-    });
-  }
-
-  async function saveVision() {
+  async function saveVision(results) {
     const transaction = await supabase
       .from("vision")
       .select()
@@ -216,17 +174,145 @@ function Flow({ userConfig }) {
         .update({
           ...transaction?.data,
           user_id: userConfig?.id,
-          objectives: keyResults,
+          objectives: results,
         })
         .eq("id", transaction?.data?.id);
     } else {
       await supabase.from("vision").upsert({
         ...transaction?.data,
         user_id: userConfig?.id,
-        objectives: keyResults,
+        objectives: results,
       });
     }
   }
 }
+
+function ObjectiveDialog({
+  currentObjective,
+  setCurrentObjective,
+  keyResults,
+  setKeyResults,
+  saveVision,
+}) {
+  const [visionObject, setVisionObject] = useState(
+    keyResults[currentObjective] ?? {}
+  );
+  const subKeyResults = visionObject?.["krs"] || [];
+  useEffect(() => {
+    setVisionObject(keyResults[currentObjective] ?? {});
+  }, [currentObjective, keyResults]);
+
+  const open = useMemo(
+    () => currentObjective !== null && currentObjective !== undefined,
+    [currentObjective]
+  );
+  return (
+    <Dialog open={open} onOpenChange={setCurrentObjective}>
+      <DialogPortal>
+        <DialogContent>
+          <DialogHeader>{`${
+            currentObjective ? "Edit" : "Create"
+          } Objective`}</DialogHeader>
+          <div className="mb-4 w-[400px] pr-5">
+            <Label>Objective</Label>
+            <Input
+              onChange={(e) => changeObjectiveName(e.target.value)}
+              value={visionObject?.["objective"] ?? ""}
+            />
+            {subKeyResults?.map((item, i) => {
+              return (
+                <div className="flex" key={i}>
+                  <div className="flex-1">
+                    <Label>Key Result</Label>
+                    <Input
+                      onChange={(e) => changeKeyResult(i, e.target.value)}
+                      value={subKeyResults?.[i] ?? ""}
+                    />
+                  </div>
+                  <Button
+                    onClick={() => {
+                      removeKeyResult(i);
+                    }}
+                    className="self-end ml-4"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              );
+            })}
+            <div className="pt-2 text-center">
+              <Button
+                onClick={() => {
+                  addKeyResult();
+                }}
+              >
+                Add Key Result
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                submitObjective();
+              }}
+            >
+              {`${currentObjective ? "Update" : "Submit"} Objective`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </DialogPortal>
+    </Dialog>
+  );
+
+  function changeObjectiveName(value) {
+    setVisionObject({
+      ...visionObject,
+      objective: value,
+    });
+  }
+
+  function addKeyResult() {
+    setVisionObject({
+      ...visionObject,
+      krs: [...(visionObject?.krs || []), ""],
+    });
+  }
+
+  function changeKeyResult(krIndex, value) {
+    const currentKeyResults = [...(visionObject?.krs || [])];
+    currentKeyResults[krIndex] = value;
+
+    setVisionObject({
+      ...visionObject,
+      krs: currentKeyResults,
+    });
+  }
+
+  function removeKeyResult(krIndex) {
+    const currentKeyResults = [...(visionObject?.krs || [])]?.filter(
+      (_, i) => i !== krIndex
+    );
+
+    setVisionObject({
+      ...visionObject,
+      krs: currentKeyResults,
+    });
+  }
+
+  async function submitObjective() {
+    const currentKeyObjIndex =
+      currentObjective ?? Object.keys(keyResults ?? {}).length;
+    setKeyResults({
+      ...keyResults,
+      [currentKeyObjIndex]: visionObject,
+    });
+    setCurrentObjective(null);
+    await saveVision({
+      ...keyResults,
+      [currentKeyObjIndex]: visionObject,
+    });
+  }
+}
+
 
 export default Flow;
