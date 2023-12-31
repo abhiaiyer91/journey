@@ -197,21 +197,19 @@ function ObjectiveDialog({
   const [visionObject, setVisionObject] = useState(
     keyResults[currentObjective] ?? {}
   );
+
   const subKeyResults = visionObject?.["krs"] || [];
+
   useEffect(() => {
     setVisionObject(keyResults[currentObjective] ?? {});
   }, [currentObjective, keyResults]);
 
-  const open = useMemo(
-    () => currentObjective !== null && currentObjective !== undefined,
-    [currentObjective]
-  );
   return (
-    <Dialog open={open} onOpenChange={setCurrentObjective}>
+    <Dialog open={currentObjective} onOpenChange={setCurrentObjective}>
       <DialogPortal>
         <DialogContent>
           <DialogHeader>{`${
-            currentObjective ? "Edit" : "Create"
+            subKeyResults?.length ? "Edit" : "Create"
           } Objective`}</DialogHeader>
           <div className="mb-4 w-[400px] pr-5">
             <Label>Objective</Label>
@@ -256,7 +254,7 @@ function ObjectiveDialog({
                 submitObjective();
               }}
             >
-              {`${currentObjective ? "Update" : "Submit"} Objective`}
+              {`${subKeyResults?.length ? "Update" : "Submit"} Objective`}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -313,6 +311,5 @@ function ObjectiveDialog({
     });
   }
 }
-
 
 export default Flow;

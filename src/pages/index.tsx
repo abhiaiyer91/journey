@@ -394,9 +394,8 @@ function AddWeight({ userConfig, refetch }) {
         })
         .eq("id", transaction?.data?.id);
     } else {
-      await supabase.from("weight_tracker").upsert({
+      await supabase.from("weight_tracker").insert({
         created_at: formatDate(start),
-        ...transaction?.data,
         user_id: userConfig?.id,
         type: "IMPERIAL",
         value: values.value,
