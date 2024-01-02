@@ -48,16 +48,19 @@ export function Overview({ tx, type, userConfig, chartType }) {
         })
         ?.reverse() || [];
   } else if (type === "MOOD") {
+    console.log({ tx })
     chartData =
-    tx
-      ?.map(({ mood, created_at }) => {
-        return {
-          name: formatDate(new Date(created_at)),
-          total: mood,
-        };
-      })
-      ?.reverse() || [];
+      tx
+        ?.map(({ mood, created_at }) => {
+          return {
+            name: formatDate(new Date(created_at)),
+            total: mood,
+          };
+        })
+        ?.reverse() || [];
   }
+
+  console.log(chartData);
 
   const [serieData, setSerieData] = useState(chartData);
 

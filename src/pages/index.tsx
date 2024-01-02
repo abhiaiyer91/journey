@@ -908,8 +908,6 @@ function AppView({
   refetch;
   userConfig: any;
 }) {
-  const [toggleEdit, setToggleEdit] = useState(false);
-
   if (userConfig?.name) {
     return (
       <>

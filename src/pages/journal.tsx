@@ -135,7 +135,7 @@ export default function Journal({ userConfig }) {
                                 .single()
                                 .then(({ data }) => {
                                   if (!data) {
-                                    supabase
+                                    return supabase
                                       .from(`journal`)
                                       .insert({
                                         content: journalText,
@@ -147,7 +147,7 @@ export default function Journal({ userConfig }) {
                                         journalRefetch();
                                       });
                                   } else {
-                                    supabase
+                                    return supabase
                                       .from(`journal`)
                                       .update({
                                         content: journalText,
@@ -158,7 +158,8 @@ export default function Journal({ userConfig }) {
                                         journalRefetch();
                                       });
                                   }
-
+                                })
+                                .then(() => {
                                   supabase
                                     .from(`transaction`)
                                     .update({

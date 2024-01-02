@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { formatDate, startOfDay } from "./utils";
+import { formatDate } from "./utils";
 
 export async function getUserConfig({ router }) {
   const result = await supabase.auth.getSession();
@@ -51,7 +51,10 @@ export async function getUserConfig({ router }) {
     })
     ?.reduce((partialSum, a) => partialSum + a, 0);
 
-  console.log(totalXP, "TOTAL");
+  const txs = tx?.data?.sort((a, b) => {
+    return (new Date(b.created_at).getTime() -
+      new Date(a.created_at).getTime()) as number;
+  });
 
   return {
     ...data,
@@ -59,8 +62,8 @@ export async function getUserConfig({ router }) {
     userId,
     hydration: hydration?.data,
     email: result?.data?.session?.user?.email,
-    tx: tx?.data,
-    todaysTx: tx?.data?.[0],
+    tx: txs,
+    todaysTx: txs?.[0],
     weight_loss_goal: weightLossGoal?.data,
   };
 }
