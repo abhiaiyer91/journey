@@ -14,7 +14,10 @@ import { supabase } from "@/lib/supabase";
 import { formatDate } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import {
+  energyToEmoji,
+  focusToEmoji,
   moodToEmoji,
+  sleepToEmoji,
   useCheckinStats,
   useJournalByDay,
   useSobrietyByDay,
@@ -35,14 +38,12 @@ export default function Journal({ userConfig }) {
     journalText,
     setJournalText,
     journalRefetch,
-    mood,
-    setMood,
+    mentalQs,
+    setMentalQs,
   } = useJournalByDay({
     date,
     userId: userConfig?.id,
   });
-
-  console.log({ journal, mood });
 
   return (
     <section>
@@ -100,9 +101,12 @@ export default function Journal({ userConfig }) {
                             size="lg"
                             type="single"
                             className="justify-start"
-                            value={`${mood}`}
+                            value={`${mentalQs[`mood`]}`}
                             onValueChange={(v) => {
-                              setMood(v);
+                              setMentalQs({
+                                ...mentalQs,
+                                mood: v,
+                              });
                             }}
                           >
                             <ToggleGroupItem value="0">😡</ToggleGroupItem>
@@ -110,6 +114,60 @@ export default function Journal({ userConfig }) {
                             <ToggleGroupItem value="2">😌</ToggleGroupItem>
                             <ToggleGroupItem value="3">😊</ToggleGroupItem>
                             <ToggleGroupItem value="4">😃</ToggleGroupItem>
+                          </ToggleGroup>
+                          <h1>How well did you sleep last night?</h1>
+                          <ToggleGroup
+                            size="lg"
+                            type="single"
+                            className="justify-start"
+                            value={`${mentalQs[`sleep`]}`}
+                            onValueChange={(v) => {
+                              setMentalQs({
+                                ...mentalQs,
+                                energy: v,
+                              });
+                            }}
+                          >
+                            <ToggleGroupItem value="0">😴</ToggleGroupItem>
+                            <ToggleGroupItem value="1">🥱</ToggleGroupItem>
+                            <ToggleGroupItem value="2">😑</ToggleGroupItem>
+                            <ToggleGroupItem value="3">😊</ToggleGroupItem>
+                            <ToggleGroupItem value="4">😃</ToggleGroupItem>
+                          </ToggleGroup>
+                          <h1>How would you rate your energy levels?</h1>
+                          <ToggleGroup
+                            size="lg"
+                            type="single"
+                            className="justify-start"
+                            value={`${mentalQs[`energy`]}`}
+                            onValueChange={(v) => {
+                              setMentalQs({
+                                ...mentalQs,
+                                sleep: v,
+                              });
+                            }}
+                          >
+                            <ToggleGroupItem value="0">⚡</ToggleGroupItem>
+                            <ToggleGroupItem value="1">⚡⚡</ToggleGroupItem>
+                            <ToggleGroupItem value="2">⚡⚡⚡</ToggleGroupItem>
+                          </ToggleGroup>
+
+                          <h1>How was your focus and motivation levels?</h1>
+                          <ToggleGroup
+                            size="lg"
+                            type="single"
+                            className="justify-start"
+                            value={`${mentalQs[`focus`]}`}
+                            onValueChange={(v) => {
+                              setMentalQs({
+                                ...mentalQs,
+                                focus: v,
+                              });
+                            }}
+                          >
+                            <ToggleGroupItem value="0">🦾</ToggleGroupItem>
+                            <ToggleGroupItem value="1">🦾🦾</ToggleGroupItem>
+                            <ToggleGroupItem value="2">🦾🦾🦾</ToggleGroupItem>
                           </ToggleGroup>
 
                           <Textarea
@@ -119,7 +177,7 @@ export default function Journal({ userConfig }) {
                             }}
                             placeholder="Type your message here."
                             id="message"
-                            rows={20}
+                            rows={10}
                           />
                         </div>
                       </CardContent>
@@ -141,7 +199,13 @@ export default function Journal({ userConfig }) {
                                         content: journalText,
                                         user_id: userConfig?.id,
                                         created_at: formatDate(date),
-                                        mood: parseInt(mood, 10),
+                                        mood: parseInt(mentalQs[`mood`], 10),
+                                        focus: parseInt(mentalQs[`focus`], 10),
+                                        sleep: parseInt(mentalQs[`sleep`], 10),
+                                        energy: parseInt(
+                                          mentalQs[`energy`],
+                                          10
+                                        ),
                                       })
                                       .then(() => {
                                         journalRefetch();
@@ -151,7 +215,13 @@ export default function Journal({ userConfig }) {
                                       .from(`journal`)
                                       .update({
                                         content: journalText,
-                                        mood: parseInt(mood, 10),
+                                        mood: parseInt(mentalQs[`mood`], 10),
+                                        focus: parseInt(mentalQs[`focus`], 10),
+                                        sleep: parseInt(mentalQs[`sleep`], 10),
+                                        energy: parseInt(
+                                          mentalQs[`energy`],
+                                          10
+                                        ),
                                       })
                                       .eq("id", data?.id)
                                       .then(() => {
@@ -163,7 +233,10 @@ export default function Journal({ userConfig }) {
                                   supabase
                                     .from(`transaction`)
                                     .update({
-                                      mood: parseInt(mood, 10),
+                                      mood: parseInt(mentalQs[`mood`], 10),
+                                      focus: parseInt(mentalQs[`focus`], 10),
+                                      sleep: parseInt(mentalQs[`sleep`], 10),
+                                      energy: parseInt(mentalQs[`energy`], 10),
                                     })
                                     .eq("user_id", userConfig?.id)
                                     .eq("created_at", formatDate(date))
@@ -189,7 +262,18 @@ export default function Journal({ userConfig }) {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="mb-2">{moodToEmoji[journal?.mood]}</div>
+                      <div className="mb-2">
+                        Mood: {moodToEmoji[journal?.mood]}
+                      </div>
+                      <div className="mb-2">
+                        Focus: {focusToEmoji[journal?.focus]}
+                      </div>
+                      <div className="mb-2">
+                        Sleep: {sleepToEmoji[journal?.sleep]}
+                      </div>
+                      <div className="mb-2">
+                        Energy: {energyToEmoji[journal?.energy]}
+                      </div>
                       {journal?.content}
                     </CardContent>
                   </Card>

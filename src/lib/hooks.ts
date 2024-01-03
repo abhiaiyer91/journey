@@ -73,17 +73,37 @@ export const moodToEmoji = {
   "4": `😃`,
 };
 
+export const sleepToEmoji = {
+  "0": `😴`,
+  "1": `🥱`,
+  "2": `😑`,
+  "3": `😊`,
+  "4": `😃`,
+};
+
+export const focusToEmoji = {
+  "0": `🦾`,
+  "1": `🦾🦾`,
+  "2": `🦾🦾🦾`,
+};
+
+export const energyToEmoji = {
+  "0": `⚡`,
+  "1": `⚡⚡`,
+  "2": `⚡⚡⚡`,
+};
+
 export function useJournalByDay({ date, userId }): {
   journal: any;
-  mood: string;
-  setMood: any;
+  mentalQs: Record<string, any>;
+  setMentalQs: any;
   journalText: string;
   setJournalText: any;
   journalRefetch: any;
 } {
   const [journal, setJournal] = useState();
   const [journalText, setJournalText] = useState(``);
-  const [mood, setMood] = useState(``);
+  const [mentalQs, setMentalQs] = useState({});
 
   function refetch() {
     const createdAt = formatDate(new Date(date as any));
@@ -98,9 +118,21 @@ export function useJournalByDay({ date, userId }): {
         if (data) {
           setJournal(data as any);
           setJournalText(data?.content || ``);
-          setMood(data?.mood);
+
+          setMentalQs({
+            mood: data?.mood,
+            focus: data?.focus,
+            energy: data?.energy,
+            sleep: data?.sleep,
+          });
         } else {
-          setMood(``);
+          setMentalQs({
+            mood: ``,
+            focus: ``,
+            energy: ``,
+            sleep: ``,
+          });
+
           setJournalText(``);
           setJournal(undefined);
         }
@@ -113,8 +145,8 @@ export function useJournalByDay({ date, userId }): {
 
   return {
     journal,
-    mood,
-    setMood,
+    mentalQs,
+    setMentalQs,
     journalText,
     setJournalText,
     journalRefetch: refetch,
