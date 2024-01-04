@@ -124,7 +124,7 @@ export default function Journal({ userConfig }) {
                             onValueChange={(v) => {
                               setMentalQs({
                                 ...mentalQs,
-                                energy: v,
+                                sleep: v,
                               });
                             }}
                           >
@@ -143,7 +143,7 @@ export default function Journal({ userConfig }) {
                             onValueChange={(v) => {
                               setMentalQs({
                                 ...mentalQs,
-                                sleep: v,
+                                energy: v,
                               });
                             }}
                           >
