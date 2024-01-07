@@ -320,25 +320,27 @@ function Fitness({ userConfig, hasCancel = false, userId, refetch }) {
     const currentUserConfig = await supabase
       .from(`user_config`)
       .select()
-      .eq(`userId`, userId)
+      .eq(`user_id`, userId)
       .single();
 
-    if (currentUserConfig?.data) {
-      await supabase
-        .from("user_config")
-        .update({
+    if (!currentUserConfig?.error) {
+      if (currentUserConfig?.data) {
+        await supabase
+          .from("user_config")
+          .update({
+            ...values,
+            tdee: result * activityMultiplier[values.activity],
+            baseXP: result * activityMultiplier[values.activity] - 500,
+          })
+          .eq(`id`, userConfig?.id);
+      } else {
+        await supabase.from("user_config").insert({
           ...values,
+          user_id: userId,
           tdee: result * activityMultiplier[values.activity],
           baseXP: result * activityMultiplier[values.activity] - 500,
-        })
-        .eq(`id`, userConfig?.id);
-    } else {
-      await supabase.from("user_config").insert({
-        ...values,
-        user_id: userId,
-        tdee: result * activityMultiplier[values.activity],
-        baseXP: result * activityMultiplier[values.activity] - 500,
-      });
+        });
+      }
     }
 
     return refetch();
