@@ -1,8 +1,8 @@
-import { supabase } from "@/lib/supabase";
+import { supabase } from "../lib/supabase";
 
 // { [key: string]: ANYTHING }
 
-class UserConfig {
+export class UserConfig {
   async userConfigByUserId(userId: string) {
     const result = await supabase
       .from("user_config")
@@ -11,7 +11,7 @@ class UserConfig {
       .single();
 
     if (result.error) {
-      // DO SOMETHING
+      console.error(result.error);
       return;
     }
 
@@ -20,10 +20,25 @@ class UserConfig {
 
   // f(x, y)
 
+  async updateUserConfigByUserId(userId: string, data: Record<string, any>) {
+    const result = await supabase
+      .from("user_config")
+      .update(data)
+      .eq(`user_id`, userId);
+
+    if (result.error) {
+      console.error(result.error);
+      return;
+    }
+
+    return result.data;
+  }
+
   async updateUserConfig(id: string, data: Record<string, any>) {
     const result = await supabase.from("user_config").update(data).eq(`id`, id);
 
     if (result.error) {
+      console.error(result.error);
       return;
     }
 
@@ -34,9 +49,19 @@ class UserConfig {
     const result = await supabase.from("user_config").insert(data);
 
     if (result.error) {
+      console.error(result.error);
       return;
     }
+  }
 
-    return result.data;
+  async deleteUserConfig(userId: string) {
+    const result = await supabase
+      .from("user_config")
+      .delete()
+      .eq("user_id", userId);
+
+    if (result.error) {
+      console.error(result.error);
+    }
   }
 }
