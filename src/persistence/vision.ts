@@ -1,6 +1,6 @@
-import { supabase } from "@/lib/supabase";
+import { supabase } from "../lib/supabase";
 
-class Vision {
+export class Vision {
 
     async updateVision(id: string, data: Record<string, any>) {
         const result = await supabase.from("vision").update(data).eq(`id`, id);
@@ -20,7 +20,17 @@ class Vision {
 
         return result.data;
     }
+    async deleteVisionById(id: number) {
+        const result = await supabase
+            .from("vision")
+            .delete()
+            .eq("user_id", id)
 
+
+        if (result.error) {
+            console.error(result.error);
+        }
+    }
 
 
 }
